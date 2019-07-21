@@ -1,6 +1,6 @@
-# 读书笔记之《You Don't Know JS》
+# 读书笔记 之《You Don't Know JS》
 
-## 收集了关于拜读《You Don't Know JS》之后的一些收获，仅作为参考，强烈推荐[阅读原著](https://github.com/getify/You-Dont-Know-JS "You Don't Know JS")
+## 罗列了关于拜读《You Don't Know JS》之后的一些收获，仅作为参考，强烈推荐[阅读原著](https://github.com/getify/You-Dont-Know-JS "You Don't Know JS")
 
 - [开始](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/tree/master/up%20%26%20going) (up & going)
 - [作用域和闭包](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/tree/master/scope%20%26%20closures) (scope & closures)
