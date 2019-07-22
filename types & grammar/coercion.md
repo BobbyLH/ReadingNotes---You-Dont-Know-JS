@@ -59,7 +59,7 @@ var a = Object.create(null);
     o.e = a;
     JSON.stringify(a); // TypeError ...
     ```
-    ![avatar](./coercion_circular_references.png)
+    ![avatar](./assets/coercion_circular_references.png)
   * toJSON
     + 如果一个对象定义了toJSON的方法，那么在做序列化的过程中，这个方法会被唤起并决定哪些值会被序列化
     ```javascript
@@ -341,7 +341,7 @@ timestamp = Date.now()
   - 和 + 运算符不同的是，- 运算符不会进行字符串的删减，而会将字符串转换成数字后进行数学运算；
   - 针对**var a = [3];** 先会进行`valueOf(...)`，但是此时的结果不是原始值，然后调用`toString(...)`方法，转换成字符串，最后再转换成数字进行数学运算
 
-### Boolean <--> Number
+### Boolean --> Number
 - boolean 到 number 主要是基于 + - * / 等运算符
   ```javascript
   var a = true;
@@ -373,7 +373,7 @@ timestamp = Date.now()
   // 则最终sum结果满足1，则说明只有一个传入的值是truthy
   ```
 
-### * <--> Boolean
+### * --> Boolean
 - boolean值隐式转换的触发点
   1. `if (...)`
   2. `for(...; ...; ...;);` 第二个条件
@@ -390,3 +390,32 @@ timestamp = Date.now()
     a ? b : a;
     ```
   * 从结果来看，|| 和 && 与 ?: 三元运算符保持一致；区别在于它们的运行过程，比如a || b 如果a为truthy，那么只会对a进行一次evaluated，如果是a ? a : b，a会进行两次evaluated
+  * `&&` 又被称为 `guard operator` 或 `short circuiting`,
+  * 虽然`&&` 和 `||`返回的是它们的操作数, 但是在if(...)、while(...) 等语句中, 最终会将它们返回的操作数再一次隐式转换成`boolean`
+
+----
+
+## Symbol Coercion
+- 对于转换`string`类型, 能够显示的转换, 但是对其进行隐式转换只会得到错误
+  ```javascript
+  const s1 = Symbol('test');
+
+  String(s1); // 'Symbol(test)'
+  s1 + ''; // TypeError
+  ```
+  ![avatar](./assets/coercion_symbol_err_str.png)
+- 对于转换`number`类型, 都会报错
+  ```javascript
+  const s2 = Symbol(2);
+
+  Number(s2); // TypeError
+  +s2; // TypeError
+  ```
+  ![avatar](./assets/coercion_symbol_err_num.png)
+- 对于转换`boolean`类型, 则都允许
+  ```javascript
+  const s3 = Symbol(true);
+
+  Boolean(s3); // true
+  !s3; // false
+  ```
