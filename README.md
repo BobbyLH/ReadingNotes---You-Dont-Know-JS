@@ -1,6 +1,6 @@
 # 读书笔记 之《You Don't Know JS》
 
-## 罗列了关于拜读《You Don't Know JS》之后的一些收获，仅作为参考，强烈推荐[阅读原著](https://github.com/getify/You-Dont-Know-JS "You Don't Know JS")
+## 罗列了关于拜读《You Don't Know JS》之后的一些收获，仅作为参考, 强烈推荐[阅读原著](https://github.com/getify/You-Dont-Know-JS "You Don't Know JS")
 
 ### 简介
 这本书不涉及到任何的框架和库, 只聚焦于原生的JS内容, 且大部分是作为JS开发者很容易忽略但却对于理解这门语言所产生的反应至关重要的内容
