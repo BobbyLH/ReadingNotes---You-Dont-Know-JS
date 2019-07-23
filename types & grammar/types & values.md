@@ -1,4 +1,4 @@
-# 类型 - JS中，变量(variables)没有类型，只有值(values)有类型
+# 类型和值(Types & Values) - JS中，变量(variables)没有类型，只有值(values)有类型
 
 ## 基本类型(Scalar Primitives)
 - null
@@ -24,10 +24,12 @@
 
 ### number
 - JS中没有区分integer和float(fraction)
+
 - JS中的number 是基于JEEE 754标准，通常叫float-point，而JS中的number使用的就是其double precision(64-bit binary)的标准格式
   * 基于这个标准，才会出现 `0.1 + 0.2 === 0.3; //false` 的浮点数精度丢失的情况
   * 具体原因是因为0.1这个浮点数在取整验算中，有些对应的小数是无法写全的，因为JEEE 754 64bit只允许存在52位fraction，超过的部分进一舍零
 - `0.42` 和 `.42` 都是有效的数字, `42.0` 和 `42.` 也是一样
+
 - *很大* 或 *很小*的数字会被转换成 `指数形式(exponent form)`, 也可以用**toExponential**内建方法来转换成指数形式的字符串
   ```javascript
   var a = 5E10;
@@ -37,7 +39,9 @@
   b; // 2.5e+21
   var c = 1 / b; // 4e-22
   ```
+
 - **toFixed** 和 **toPrecision** 很相似，前者是指定小数点个数，后者则是指定有多少有效数字
+
 - 虽然不必通过变量保存某个number后再用 `.` 运算符获取这些方法，但要小心 `.` 运算符一开始会被当成是number字面量的一部分，如果可能的话，才会被解释成属性获取
   ```javascript
   (42).toFixed(3);  // 42.000
@@ -46,18 +50,27 @@
   42.toFixed(3); // SyntaxError
   42 .toFixed(3); // 42.000  留意空格
   ```
+
 - **Number.EPSILON**
   ```javascript
   // 用这个预定义的公差值，我们能够在JS中比较放心的比较浮点数是否相等
   if (!Number.EPSILON) Number.EPSILON = Math.pow(2, -52);
   ```
+
 - JS中最大的数约为 **1.798e+308**，即**Number.MAX_VALUE**
+
 - 最小的数不是负数，是 **Number.MIN_VALUE** (5e-324)
+
 - ES6定义了**Number.MAX_SAFE_INTERGER** 为 2^53 - 1
+
 - **Number.MIN_SAFE_INTERGER** 为 -(2^53 - 1)
+
 - 上面这些数字的定义主要是为了考虑JS有可能会处理数据库64位的ID
+
 - **Infinity** 定义了无限大
+
 - **Number.isInteger** 和 **Number.isSafeInteger** 可以测试number值是否是整型和安全整型
+
 - JS 按位运算符的操作范围在 `2^31 - 1` 到 `-2^31` 之间(32bit)，因此也能将number的范围进一步缩小
   ```javascript
   var a = Math.pow(2, 33);
@@ -157,8 +170,11 @@
 
 ## 值和引用(Value & Reference)
 - JS中, 决定值拷贝还是地址引用的是值的类型
+
 - 基本类型 都是值拷贝(value-copy)
+
 - object类型和function类型 都是地址引用(reference-copy), 但实际上指针指向的也是底层的值(underlying value)，而不是其他的变量或引用
+
 - 设定`a`是数组，因此传递的是地址，在函数内对参数进行push操作，会影响到引用地址的值
   ```javascript
   function foo (a) {
@@ -171,6 +187,7 @@
   foo(a);
   a; // [1,2,3] 
   ```
+
 - 即使是原始类型的包装对象，也无法形成地址引用，改变包装对象的值
   ```javascript
   function foo (a) {

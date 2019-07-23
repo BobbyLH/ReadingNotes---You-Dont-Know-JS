@@ -1,4 +1,4 @@
-# 类型转换
+# 类型转换(Coercion)
 
 ## 强制转换(type casting/conversion) VS 隐式转换(type coercion)
 - 最大的区别在于 强制转换一般是静态类型的语言发生在编译时(compile time)，隐式转换一般是动态类型的语言发生在运行时(runtime)
@@ -154,7 +154,7 @@ document.all; // 为了区别老旧的IE浏览器，大部分现代浏览器都�
 
 ----
 
-## 显示转换 Explicit Coercion
+## 显示转换(Explicit Coercion)
 ### String <--> Number
 #### 使用built-in native constructors(但是不加关键字new，意味着不实例化产生包装对象)
 ```javascript
@@ -277,7 +277,7 @@ timestamp = Date.now()
 
 ----
 
-## 隐式转换 Implicit Coercion
+## 隐式转换(Implicit Coercion)
 + JS implicit coercion的目的是: 减少冗余的、样板文件、不必要的执行细节，避免代码被各种噪声转移注意，更清晰的显示代码本来的意图
 + 某些场景下省略或者抽离类型转换的细节，反而有助于代码的阅读性
 + JS的隐式转换总会把值变成原始类型的值，而非复杂类型的值
@@ -395,7 +395,7 @@ timestamp = Date.now()
 
 ----
 
-## Symbol Coercion
+## Symbol的转换(Symbol Coercion)
 - 对于转换`string`类型, 能够显示的转换, 但是对其进行隐式转换只会得到错误
   ```javascript
   const s1 = Symbol('test');
@@ -419,3 +419,13 @@ timestamp = Date.now()
   Boolean(s3); // true
   !s3; // false
   ```
+
+----
+
+## 松比较和严格比较(Loose Equals vs. Strict Equals)
+- 一个常见的错误的概念是: `==` 检测的是值相等, `===` 检测值和类型相等...但正确的解释是: `==` 在检测中允许类型转换, `===` 则不允许, 它们都进行了类型检查, 区别只不过是允不允许类型不同而已
+- 如果比较的相同类型的值, 那么`==` 和 `===` 使用相同的算法
+- 如果比较不同类型的值, 虽然在表现和算法有差异, 但这不是重点(很可能只是几微秒的差距), 关注点应该是你是否想要让比较的值进行隐式转换
+
+### 抽象相等(Abstract Equality)
+- `==` 操作符的行为被定义为"抽象相等比较算法"(The Abstract Equality Comparison Algorithm)
