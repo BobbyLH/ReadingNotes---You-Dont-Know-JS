@@ -48,15 +48,15 @@
 
 ----
 
-### Array(...)
-#### new Array(...); 和 Array(...);
+## Array(...)
+### new Array(...); 和 Array(...);
 - 两者都行为表现一致
 
 - 只指定一个参数的时候，创建的是一个预填充的数据
 
 - 传递一个以上的参数时，则将每个参数作为slot的值生成数组
 
-#### empty 和 undefined数组
+### empty 和 undefined数组
 - `empty[]` 稀疏数组 和 `undefined[]` 空数组
   ```javascript
   var a = Array(3);
@@ -87,14 +87,18 @@
   var e = Array.apply(null, { length: 3 }); // [undefined, undefined, undefined]
   ```
 
-### Object(...) & Function(...) & RegExp(...)
+----
+
+## Object(...) & Function(...) & RegExp(...)
 - `new Object(...)` ---> 没有任何理由使用它而不用对象字面量，因为它不仅要求你一个一个添加对象属性，在性能上也没有对象字面量好
 
 - `new Function(...)` ---> 允许你动态的创建函数，但别把它和eval(...)混淆，后者是应该避免使用的坑
 
 - `new RegExp(...)` ---> 正则表达式字面量不仅在语法上，而且在性能上也优于正则构造函数(JS engine 会预编译和缓存正则字面量表达式)，但是正则构造函数可以动态创建正则，在这种case下非常有用
 
-### Date(...) & Error(...)
+----
+
+## Date(...) & Error(...)
 - `Date()` 获取格式化后的时间日期字符串
 
 - `Date.now()` 和 `new Date().getTime()` 获取当前时间戳
@@ -109,14 +113,18 @@
   * TypeError(...)
   * URIError(...)
 
-### Symbol(...)
+----
+
+## Symbol(...)
 - 是唯一一个Native 方法不能使用new 关键字的构造函数
 
 - 使用`Object.getOwnPropertySymbols(...)` 能够获取对象上的symbol属性
 
 - 通常的做法是 用**symbol** 指代 *特殊/私有* 属性
 
-### Native.prototype
+----
+
+## Native.prototype
 - 大部分Native 的prototype 是一个对象，除了Function.prototype 和 Array.prototype之外
   ```javascript
   typeof Function.prototype; // function
