@@ -5,6 +5,8 @@
 
 - Expression 类似词组，Operator 类似连词/标点符号
 
+---
+
 ## 陈述句完成值(Statement Completion Values)
 - `console.log`的完成值是undefined
   ```javascript
@@ -19,6 +21,8 @@
   a = eval('if (true) b = 3 + 2'); // 5
   a; // 5
   ```
+
+---
 
 ## 表达式副作用(Expression Side Effect)
 - `++` - 会显示返回操作对象的值

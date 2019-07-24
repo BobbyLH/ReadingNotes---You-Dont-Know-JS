@@ -4,6 +4,8 @@
 - 最大的区别在于 强制转换一般是静态类型的语言发生在编译时(compile time)，隐式转换一般是动态类型的语言发生在运行时(runtime)
 - 对于JS来说, 关于显示和隐式转化，并没有清晰的定义。但通常来讲，如果你清晰的知道某个写法会被coercion，那对你而言，这就是显示转换
 
+----
+
 ## JS中的抽象运算(abstract operation / internel-only operation)
 
 ### ToPrimitive

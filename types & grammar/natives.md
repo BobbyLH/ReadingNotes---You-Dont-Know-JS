@@ -129,7 +129,22 @@
 
 - 使用`Object.getOwnPropertySymbols(...)` 能够获取对象上的symbol属性
 
-- 通常的做法是 用**symbol** 指代 *特殊/私有* 属性
+- 通常的做法是 用**symbol** 指代 *特殊/私有* 属性，下面代码中的`Symbol('id')`就是私有属性，不能被`for in`循环遍历到
+  ```javascript
+  const user = {
+    name: 'tom',
+    age: 18,
+    [Symbol('id')]: 53372
+  };
+  user; // {name: "tom", age: 18, Symbol(id): 53372}
+
+  for (item in user) {
+    console.log(item);
+  };
+  // name
+  // age
+  ```
+  ![avatar](./assets/coercion_symbol_private.png)
 
 ----
 
