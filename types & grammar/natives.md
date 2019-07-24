@@ -15,12 +15,21 @@
 ----
 
 ## 包装对象(Boxing Wrappers)
-- 原始值不包含任何的属性和方法, 之所以能够有下面这行行为, 是因为JS自动帮我们使用Natives做了一层 包装
+- 原始值不包含任何的属性和方法, 之所以能够有下面的行为, 是因为JS自动帮我们使用Natives做了一层 包装
   ```javascript
-  var a = '123';
-  a.length;
-  a.toUppercase();
+  'test'.length; // 4
+  'test'.toUppercase(); // 'TEST'
+  true.toString(); // 'true'
   ```
+
+- 但如果在数字类型调用:
+  ```javascript
+  123.toString(); // SyntaxError
+
+  var a = 123;
+  a.toString(); // '123'
+  ```
+  ![avatar](./assets/coercion_native_err_num.png)
 
 - 更高效的做法不是使用Native方法(包装对象)去创建原始值`var a = new Number(2);`，而是直接用字面量创建`var b = 2;`，因为大部分的浏览器已经对一些原始值常用的属性和方法进行了优化，而使用包装对象创建原始值会包含Native方法的context，性能开销更大，反而得不偿失
 
