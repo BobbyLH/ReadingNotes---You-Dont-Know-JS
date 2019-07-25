@@ -45,3 +45,98 @@
   ++e++; // ReferenceError
   ```
   ![avatar](./assets/coercion_grammer_err_++.png)
+
+- `delete` - 会显示返回操作的结果 true/false
+  ```javascript
+  var obj = { a:1 } ;
+  delete obj; // false
+  delete obj.a; // true
+  ```
+
+- `=` - 会显示返回赋值的结果
+  ```javascript
+  var a, b, c;
+  a = b = c = 33; //33
+  ```
+
+  ```javascript
+  function test (str) {
+    let match;
+    // (match = str.match(/[test]/ig)) 部分的返回值充当了 && 运算符的第二个操作数
+    if (str && (match = str.match(/[test]/ig)))a {
+      return match; 
+    }  
+  }
+  ```
+
+- `-- += -=` 等运算符也是具有副作用的表达式，并且也有相应的返回值
+
+----
+
+## 运算符
+
+### 运算符优先级(Operator Precedence) - Which one bind first before others
+- `()` 优先级最高
+
+- `,` 优先级比 `=` 低
+
+- `&&` 优先级高于 `||`
+  ```javascript
+  false && true || true;   // true
+  true || false && false;   // true
+  ````
+
+### 运算符结合律(Associativity / Grouping) - How multiple operator expressions are implicitly grouped
+- 区别执行顺序(JS 依然是从左往右执行 left-to-right processing): [Example](https://codepen.io/bobby_li/pen/bPVaNR?editors=1111)
+
+- 左结合(left-associative)
+  - `&&` 和 `||` 是左结合模式 —— 虽然无论左还是右对其值都不影响
+  ```javascript
+  var a = true;
+  var b = false;
+  var c = true;
+
+  a && b && c; // false
+  (a && b) && c; // false
+  a && (b && c); // false
+
+  a || b || c; // true
+  (a || b) || c; // true
+  a || (b || c); // true
+  ```
+
+- 右结合(right-associative)
+  - ` ? : ` 三元运算符(ternary)是右结合模式
+  ```javascript
+  var a = true;
+  var b = 'b';
+  var c = false;
+  var d = 'd';
+  var e = 'e';
+
+  a ? b : c ? d : e; // 'b'
+  (a ? b : c) ? d : e; // 'd'
+  a ? b : (c ? d : e);  // 'b'
+  ```
+
+  - `=` 赋值运算符 右结合
+  ```javascript
+  var a, b, c;
+  a = b = c = 42;
+
+  // 上面的代码就相当于下面的加了()的代码
+  a = (b = (c = 42));
+  ```
+
+- 当左右结合在一块时
+  ```javascript
+  var a = 42;
+  var b = 'foo';
+  var c = false; 
+
+  var d = a && b || c ? c || b ? a : c && b : a;
+  d; //42
+
+  // 上面的代码就相当于下面的加了()的代码
+  ((a && b) || c) ? ((c || b) ? a : (c && b)) : a
+  ```
