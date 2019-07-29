@@ -129,16 +129,16 @@ null --> 0
   ```
 - **truthy** - anything not explicitly on the falsy list is therefore truthy
 - 看下面两段代码, 体会下通过*包装对象*进和*字面量*行转换后的值的区别
-```javascript
-var a = new String('');
-var b = new Number(0);
-var c = new Boolean(false);
+  ```javascript
+  var a = new String('');
+  var b = new Number(0);
+  var c = new Boolean(false);
 
-var d = Boolean(a && b && c);
-d; //true
-var e = a && b && c;
-e; // String ''
-```
+  var d = Boolean(a && b && c);
+  d; //true
+  var e = a && b && c;
+  e; // String ''
+  ```
 
 ```javascript
 var a = "''";
@@ -149,10 +149,10 @@ var d = Boolean(a && b && c);
 d; //true
 ```
 - **falsy object**
-```javascript
-document.all; // 为了区别老旧的IE浏览器，大部分现代浏览器都将document.all 隐式转换成boolean值的时候置为false
-!!document.all; // false
-```
+  ```javascript
+  document.all; // 为了区别老旧的IE浏览器，大部分现代浏览器都将document.all 隐式转换成boolean值的时候置为false
+  !!document.all; // false
+  ```
 
 ----
 
@@ -225,21 +225,21 @@ parseInt('42px'); // 42
 - 如果以0X或0x开头，会被认为是16进制转换为10进制，如果以0开头，则会认为是8进制转换成10进制
   * 因此对于时间的转换(时分秒)，需要使用第二个参数，即指定转换的进制数(radix)
   * 在ES5以后，默认不会有8进制的转换，只有10和16进制，因此只需要注意在ES5以前的环境中使用parseInt转换0开头的字符数字即可
-```javascript
-parseInt(1/0, 19); // 18
-parseInt('b'); // NaN
-parseInt('b', 12); // 11
-// base-19，有效的数字字符是0-9和a-i，因此 1/0 --> Infinity 第一个字符i会被解析，遇到第二个字符n则会停止，因此最终的结果是18
-```
+  ```javascript
+  parseInt(1/0, 19); // 18
+  parseInt('b'); // NaN
+  parseInt('b', 12); // 11
+  // base-19，有效的数字字符是0-9和a-i，因此 1/0 --> Infinity 第一个字符i会被解析，遇到第二个字符n则会停止，因此最终的结果是18
+  ```
 
-```javascript
-parseInt( 0.000008 ); //0
-parseInt( 0.0000008 ); //8 (0.0000008 --> 8e-7)
-parseInt( false, 16 ); //250
-parseInt( Array.prototype.map, 16 ); //15 ('f' from 'function')
-parseInt( "0x10" ); //16
-parseInt( "103", 2 ); //2
-```
+  ```javascript
+  parseInt( 0.000008 ); //0
+  parseInt( 0.0000008 ); //8 (0.0000008 --> 8e-7)
+  parseInt( false, 16 ); //250
+  parseInt( Array.prototype.map, 16 ); //15 ('f' from 'function')
+  parseInt( "0x10" ); //16
+  parseInt( "103", 2 ); //2
+  ```
 
 ### Date <--> Number
 ```javascript
@@ -286,62 +286,63 @@ timestamp = Date.now()
 
 ### String <--> Number
 1. `+` 运算符
-  ```javascript
-  [1,2] + [3,4]; // '1,23,4'
+    ```javascript
+    [1,2] + [3,4]; // '1,23,4'
 
-  {a: 1} + {b: 2}; // '[object Object][object Object]'
-  ```
-  - 根据ES5 spec, + 运算符如果遇到了一个及以上string类型的操作数，会自动进行字符串拼接
-  - 如果操作数有对象时，会先将对象valueOf(...)转换成数字, 但默认的valueOf方法不会成功转成原始值, 因此最终会调用toString(...)的方法转换成原始值字符串
+    {a: 1} + {b: 2}; // '[object Object][object Object]'
+    ```
+    - 根据ES5 spec, + 运算符如果遇到了一个及以上string类型的操作数，会自动进行字符串拼接
+    - 如果操作数有对象时，会先将对象valueOf(...)转换成数字, 但默认的valueOf方法不会成功转成原始值, 因此最终会调用toString(...)的方法转换成原始值字符串
 
-  ```javascript
-  [] + {}; // '[object Object]'
+    ```javascript
+    [] + {}; // '[object Object]'
 
-  {} + []; // 0
-  ```
+    {} + []; // 0
+    ```
 
-  ```javascript
-  "" + 3; // "3"
-  ```
+    ```javascript
+    "" + 3; // "3"
+    ```
   - "" + 3; 和 String(3); 的区别是：前者先调用valueOf(...)方法，然后将其值转换成字符串，后者则是直接调用toString(...)方法
 
-  ```javascript
-  var a = {
-    valueOf: function () { return 42; },
-    toString: function () { return 2; }
-  };
+    ```javascript
+    var a = {
+      valueOf: function () { return 42; },
+      toString: function () { return 2; }
+    };
 
-  a + ''; // '42'
-  String(a); // '2'
-  ```
+    a + ''; // '42'
+    String(a); // '2'
+    ```
 
-  ```javascript
-  var a = "3";
-  var b = +a;
+    ```javascript
+    var a = "3";
+    var b = +a;
 
-  b; // 3
-  ```
+    b; // 3
+    ``` 
 
 2. `- * /` 运算符
-  ```javascript
-  var a = '3.14';
-  var b = a - 0;
-  var c = a * 1;
-  var d = a / 1;
+    ```javascript
+    var a = '3.14';
+    var b = a - 0;
+    var c = a * 1;
+    var d = a / 1;
 
-  b; // 3.14
-  c; // 3.14
-  d; // 3.14
-  ```
+    b; // 3.14
+    c; // 3.14
+    d; // 3.14
+    ```
 
-  ```javascript
-  var a = [3];
-  var b = [1];
+    ```javascript
+    var a = [3];
+    var b = [1];
 
-  a - b; // 2
-  ```
-  - 和 + 运算符不同的是，- 运算符不会进行字符串的删减，而会将字符串转换成数字后进行数学运算；
-  - 针对**var a = [3];** 先会进行`valueOf(...)`，但是此时的结果不是原始值，然后调用`toString(...)`方法，转换成字符串，最后再转换成数字进行数学运算
+    a - b; // 2
+    ```
+    - 和 + 运算符不同的是，- 运算符不会进行字符串的删减，而会将字符串转换成数字后进行数学运算；
+
+    - 针对**var a = [3];** 先会进行`valueOf(...)`，但是此时的结果不是原始值，然后调用`toString(...)`方法，转换成字符串，最后再转换成数字进行数学运算
 
 ### Boolean --> Number
 - boolean 到 number 主要是基于 + - * / 等运算符
@@ -362,7 +363,7 @@ timestamp = Date.now()
   ```
 
 - 传入任意参数，如果有且只有一个参数是truthy，则返回true，否则返回false
-```javascript
+  ```javascript
   function onlyOne () {
     let sum = 0;
     const len = arguments.length;
@@ -454,7 +455,7 @@ timestamp = Date.now()
 
 - 在ES5 11.9.3.4-5条款中：如果类型是*数字*和*字符*比较, 那么先将**字符转换成数字**, 并不区分在  `==` 运算符的左侧还是右侧
 
-#### Comparing - Any vs 布尔值
+#### Comparing - Anything vs 布尔值
 - 根据ES5 11.9.3.6-7条款中声明：如果有一个操作数是的类型是*布尔值*，那么布尔值会被优先**转换成数字**，无论布尔值是在 `==` 的左侧还是右侧
   ```javascript
   var a = '25';
@@ -505,3 +506,74 @@ timestamp = Date.now()
     // ...
   };
   ```
+
+#### Comparing - `null`s vs `undefined`s
+- 根据ES5条款 11.9.3.2-3规定：如果在 `==` 的两方的操作数是`null` 和 `undefined`，无论它们的顺序，都得到`true`
+
+- `null` 和 `undefined` 和其他的falsy进行松比较时，表现也符合预期：
+  ```javascript
+  var a = null;
+  var b;
+
+  a == b; // true
+  a == null; // true
+  b == null; // true
+  a == undefined; // true
+  b == undefined; // true
+
+  a == false; // false
+  b == false; // false
+  a == ''; // false
+  b == ''; // false
+  a == 0; // false
+  b == 0; // false
+  ```
+
+- 在下面的场景中使用松比较 `==` 显得更为合理：
+  ```javascript
+  const res = foo();
+
+  if (a == null) {
+    // do someting...
+  };
+
+  if (a === null || a === undefined) {
+    // do someting...
+  };
+  ```
+
+#### Comparing - 对象类型 vs 非对象类型
+- 根据ES5 11.9.3.8-8条款指出：松比较 `==` 中，如果任意一边的操作数是复杂类型(`array`、`function`、 `object`...) 类型，另一边是原始类型(`string`、`number`，`boolean`...)：
+  - 如果原始类型是`string`或`number`，那么会先将复杂类型转换成原始值，然后再进行比较
+
+  - 如果原始类型是`boolean`，那么会遵循11.9.3.6-7条款，先将`boolean`转换成数字，再对复杂类型进行转换后比较
+
+  - 如果复杂类型是包装对象，比如`new String(123)`，则会先将其原始值取出后，再和另一边的原始值进行比较
+    ```javascript
+    var a = 'abc';
+    var b = Object(a);
+
+    a === b; // false
+    a == b; // true
+    ```
+
+  - 但是也有一些特例：
+    ```javascript
+    // null 和 undefined 没有包装对象，因此Object(null) 和 Object(undefined) 实际上是 Object()
+    var a = null;
+    var b = Object(a);
+
+    a == b; // false
+
+    var c = undefined;
+    var d = Object(c);
+
+    c == d; // false
+
+    // NaN 能够被包装成Number对象，但是NaN是唯一一个和自身不相等的值，因此NaN == NaN 返回 false
+    var e = NaN;
+    var f = Object(e);
+
+    e == f; // false
+    ```
+  

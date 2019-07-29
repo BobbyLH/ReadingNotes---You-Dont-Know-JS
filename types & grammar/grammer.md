@@ -351,7 +351,7 @@ function ({ a, b }) {
 ----
 
 ## switch语句
-- `switch(ele) { case val };` - `ele` 和 `val` 是用 `===` 进严格对比
+- `switch(ele) { case val };`： `ele` 和 `val` 是用 `===` 进严格对比
 
 - 当执行某个case，但该case没有break语句，并且后续还有case，那么后续的case都会进入，直到结束或者遇到下一个break
 
