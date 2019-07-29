@@ -27,24 +27,24 @@
 ## 表达式副作用(Expression Side Effect)
 - `++` - 会显示返回操作对象的值
   - 下面代码示例，按照操作符运算优先级，赋值运算符的优先级远低于后置++，为什么b的值依然是12不是13呢？但d的值就是15而不是14呢？—— **因为`后置++`运算符先返回没有运算前的结果，然后才进行自增的动作, 而`(a++, a)`返回的则是后置++运算符计算完后`a`的值**
-  ```javascript
-  var a = 10;
-  a++;
-  ++a;
-  var b = a++;
-  b; // 12
-  var c = ++a;
-  c; // 14
-  var d = (a++, a);
-  d; // 15
-  ```
+    ```javascript
+    var a = 10;
+    a++;
+    ++a;
+    var b = a++;
+    b; // 12
+    var c = ++a;
+    c; // 14
+    var d = (a++, a);
+    d; // 15
+    ```
 
   - 下面的`++e++` 会报错，因为 e++ 先执行，然后返回21，++21是错误的表达式，因为原始类型不能改变自身，且++运算符的目标只能是变量
-  ```javascript
-  var e = 20;
-  ++e++; // ReferenceError
-  ```
-  ![avatar](./assets/grammer_err_++.png)
+    ```javascript
+    var e = 20;
+    ++e++; // ReferenceError
+    ```
+    ![avatar](./assets/grammer_err_++.png)
 
 - `delete` - 会显示返回操作的结果 true/false
   ```javascript
@@ -91,42 +91,42 @@
 
 - 左结合(left-associative)
   - `&&` 和 `||` 是左结合模式 —— 虽然无论左还是右对其值都不影响
-  ```javascript
-  var a = true;
-  var b = false;
-  var c = true;
+    ```javascript
+    var a = true;
+    var b = false;
+    var c = true;
 
-  a && b && c; // false
-  (a && b) && c; // false
-  a && (b && c); // false
+    a && b && c; // false
+    (a && b) && c; // false
+    a && (b && c); // false
 
-  a || b || c; // true
-  (a || b) || c; // true
-  a || (b || c); // true
-  ```
+    a || b || c; // true
+    (a || b) || c; // true
+    a || (b || c); // true
+    ```
 
 - 右结合(right-associative)
   - ` ? : ` 三元运算符(ternary)是右结合模式
-  ```javascript
-  var a = true;
-  var b = 'b';
-  var c = false;
-  var d = 'd';
-  var e = 'e';
+    ```javascript
+    var a = true;
+    var b = 'b';
+    var c = false;
+    var d = 'd';
+    var e = 'e';
 
-  a ? b : c ? d : e; // 'b'
-  (a ? b : c) ? d : e; // 'd'
-  a ? b : (c ? d : e);  // 'b'
-  ```
+    a ? b : c ? d : e; // 'b'
+    (a ? b : c) ? d : e; // 'd'
+    a ? b : (c ? d : e);  // 'b'
+    ```
 
   - `=` 赋值运算符 右结合
-  ```javascript
-  var a, b, c;
-  a = b = c = 42;
+    ```javascript
+    var a, b, c;
+    a = b = c = 42;
 
-  // 上面的代码就相当于下面的加了()的代码
-  a = (b = (c = 42));
-  ```
+    // 上面的代码就相当于下面的加了()的代码
+    a = (b = (c = 42));
+    ```
 
 - 当左右结合在一块时
   ```javascript
@@ -180,26 +180,26 @@
 ### 标签语句(label statement)
 - 给块级作用域打标签
   - 区别块级作用域和对象字面量
-  ```javascript
-  // 对象字面量
-  var a = { bar: 123 };
-  // 块级作用域
-  { let a = 456 };
-  ```
+    ```javascript
+    // 对象字面量
+    var a = { bar: 123 };
+    // 块级作用域
+    { let a = 456 };
+    ```
 
   - 为 `for` 循环打标签
-  ```javascript
-  foo: for (let i = 0; i < 10; i++) {
-    // ...
-  };
-  ```
+    ```javascript
+    foo: for (let i = 0; i < 10; i++) {
+      // ...
+    };
+    ```
 
   - 为块级作用域打标签
-  ```javascript
-  function foo () {
-    bar: {};
-  };
-  ```
+    ```javascript
+    function foo () {
+      bar: {};
+    };
+    ```
 
 - 打上标签的块级作用域能被`continue`、`break`等语句识别
   - `continue` 只支持循环语句
@@ -279,32 +279,32 @@ function ({ a, b }) {
   - 再比如`var a; 42 = a;` assignment的target必须是一个identifier
 
   - 严格模式下，函数的参数名不能重复
-  ```javascript
-  function test (a, b, a) {} 
-  function test (a, b, a) { 'use strict' } // Error
-  ```
+    ```javascript
+    function test (a, b, a) {} 
+    function test (a, b, a) { 'use strict' } // Error
+    ```
 
 - 运行时(runtime)的错误
   - 暂时性死区(TDZ Temporal Dead Zone)
-  ```javascript
-  {
-    a = 2;
-    let a; 
-  };
-  ```
+    ```javascript
+    {
+      a = 2;
+      let a; 
+    };
+    ```
 
-  ```javascript
-  {
-    typeof a;
-    typeof b;
-    let b;  
-  };
-  ```
+    ```javascript
+    {
+      typeof a;
+      typeof b;
+      let b;  
+    };
+    ```
 
-  ```javascript
-  var b = 3;
-  function foo (a = 42, b = a + b + 5) {};
-  ```
+    ```javascript
+    var b = 3;
+    function foo (a = 42, b = a + b + 5) {};
+    ```
 
 - 错误处理
   - `try catch finally` 语句
