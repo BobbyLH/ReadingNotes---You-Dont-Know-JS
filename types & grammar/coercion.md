@@ -140,14 +140,14 @@ null --> 0
   e; // String ''
   ```
 
-```javascript
-var a = "''";
-var b = '0';
-var c = 'false';
+  ```javascript
+  var a = "''";
+  var b = '0';
+  var c = 'false';
 
-var d = Boolean(a && b && c);
-d; //true
-```
+  var d = Boolean(a && b && c);
+  d; //true
+  ```
 - **falsy object**
   ```javascript
   document.all; // 为了区别老旧的IE浏览器，大部分现代浏览器都将document.all 隐式转换成boolean值的时候置为false
