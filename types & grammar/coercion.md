@@ -576,4 +576,66 @@ timestamp = Date.now()
 
     e == f; // false
     ```
-  
+
+### 极端情况(edge/corner cases)
+- 下面的例子非常极端，现实的代码中肯定不会出现，但这也是使用 `==` 松比较时可能发生的一种极端情况：
+  ```javascript
+  Number.prototype.valueOf = () => 3;
+
+  // 如果发生这样的情况不是说明隐式转换是恶魔，而是说明开发者是蠢货
+  new Number(5) == 3; // true
+  ```
+
+- 随意地修改 `valueOf()` 内建方法还能做更恶心的事情：
+  ```javascript
+  var i = 2;
+  Number.prototype.valueOf = () => i++;
+
+  var num = new Number(10);
+
+  // coercion: 发生这样的事情我们也不愿意，但谁让你TM乱动valueOf?
+  if (num == 2 && num == 3) {
+    console.log('王德发!')
+  }
+  ```
+
+#### 各种 `falsy` 的比较
+- 在诸多的隐式转换中，最饱受诟病的当属 `==` 运算符对于各种 `falsy` 的比较了：
+  ```javascript
+  '0' == null; // false
+  '0' == undefined; // false
+  '0' == false; // true troublesome
+  '0' == NaN; // false
+  '0' == 0; // true
+  '0' == ''; // false
+
+  false == null; // false
+  false == undefined; // false
+  false == NaN; // false
+  false == 0; // true troublesome
+  false == ''; // true troublesome
+  false == []; // true troublesome
+  false == {}; // false
+
+  '' == null; // false
+  '' == undefined; // false
+  '' == NaN; // false
+  '' == 0; // true troublesome
+  '' == []; // true troublesome
+  '' == {}; // false
+
+  0 == null; // false
+  0 == undefined; // false
+  0 == NaN; // false
+  0 == []; // true troublesome
+  0 == {}; // false
+  ```
+  上面一共有24种关于各种 `falsy` 的松比较，其中的17个是符合预期的，但剩余的7个应该极力避免在代码中出现：
+    - `'0' == false`
+    - `false == 0`
+    - `false == ''`
+    - `false == []`
+    - `'' == 0`
+    - `'' == []`
+    - `0 == []`
+
