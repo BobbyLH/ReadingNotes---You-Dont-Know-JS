@@ -9,39 +9,48 @@
 ## JS中的抽象运算(abstract operation / internel-only operation)
 
 ### ToPrimitive
-使用valueOf(...) & toString(...)
-将复杂类型转换成原始类型，valueOf的有限级高于toString，如果两个方法都不可用，会抛出TypeError
-```javascript
-var a = Object.create(null);
-+a; // TypeError
-```
+- 使用 `valueOf(...) & toString(...)` 将复杂类型转换成原始类型，*valueOf*的优先级高于*toString*，如果两个方法都不可用，会抛出*TypeError*
+  ```javascript
+  var a = Object.create(null);
+  +a; // TypeError
+  ```
 
 ### ToString
 - 原始值变成string，基本都是添加引号的过程''
+
 - 特别大的数字转换成string时会以指数的形式表示数字，然后再转成string
+
 #### toString(...)
 - 常规的对象转成string，一般都是调用Object.prototype.toString的方法，返回带有类的字符串
+
 - 如果对象自定义了toString方法，那么当对象被用于字符串相关的操作时，会自动调用这个自定义的方法，并返回定义的值
+
 - 总而言之，toString能够显示调用，也会在非string的值在被用于需要string的上下文中被调用
+
 #### String(...)
-- 不带关键字`new`调用String方法会显示的将传入的值转换成字符串
+- 不带关键字 `new` 调用String方法会显示的将传入的值转换成字符串
+
 #### JSON.stringify(...)
 - 一般讲，序列化(stringification)的行为和toString类似，但是操作已经是字符串的值时，序列化会再添加引号
   ```javascript
   JSON.stringify('123'); // ""123""
   ```
+
 - 关于JSON-safe
   * 有效的JSON值即为JSON-safe
+
   * 非JSON-safe
     1. undefined
     2. function
     3. symbol
     4. object with circular references - 循环引用
+
   * 对于非 JSON-safe的值
     + 如果出现在数组中，会被转换成null
     ```javascript
     JSON.stringify([1, undefined, function () {}, 55]); // [1, null, null, 55]
     ```
+
     + 如果出现在对象中，会直接被省略
     ```javascript
     JSON.stringify({
@@ -50,10 +59,12 @@ var a = Object.create(null);
       c: undefined
     }); // {a: 1}
     ```
+
     + 直接转化，则都为undefined
     ```javascript
     JSON.stringify(function () {}); // undefined
     ```
+  
     + 如果出现循环引用，会报错
     ```javascript
     var o = {};
@@ -62,6 +73,7 @@ var a = Object.create(null);
     JSON.stringify(a); // TypeError ...
     ```
     ![avatar](./assets/coercion_circular_references.png)
+
   * toJSON
     + 如果一个对象定义了toJSON的方法，那么在做序列化的过程中，这个方法会被唤起并决定哪些值会被序列化
     ```javascript
@@ -71,13 +83,16 @@ var a = Object.create(null);
     };
     JSON.stringify(a); // "{"b": 42}"
     ```
+
     + toJSON 返回的值并不需要序列化，返回正常类型值即可，因为最后的步骤还是需要交给JSON.stringify, 而toJSON只是决定了那些值会被序列化 —— 因此toJSON被翻译成 'to a JSON-safe value suitable for stringification' 更合适
+
   * JSON.stringify 接受第二个参数，可以是一个数组或一个函数
     + 序列化一个对象时，第二参数传递的数组里面指定的键会被序列化，而未被指定的则跳过，如果该键不存在，也跳过
     ```javascript
     var a = { b: 22, c: 33, d: [4,5,6] };
     JSON.stringify(a, [b, c]);
     ```
+
     + 序列化一个对象，第二个参数是函数时，会遍历这个对象，并在函数里面接受key和value的参数，返回其值则代表进行序列化，对于不想序列化的键，返回undefined即可
     ```javascript
     var a = { b: 22, c: 33, d: [4,5,6] };
@@ -88,12 +103,14 @@ var a = Object.create(null);
     // 可以观察到，第一次k是undefined，这是因为遍历的是a对象自身；
     // 而后续还会打印0 1 2，这是递归d数组，取其索引为k导致的
     ```
+
   * JSON.stringify 的第三个参数能格式化输出
     + 如果传入一个数字，则代表有多少个空格会被用于每一个缩进级别
     ```javascript
     var a = {b: 22, c: 33, d: [4,5,6]};
     JSON.stringify(a, null, 3);
     ```
+
     + 如果传入一个字符，那么该字符的前十个(如果有那么多)会被作为缩进
     ```javascript
     var a = {b: 22, c: 33, d: [4,5,6]};
@@ -118,7 +135,7 @@ null --> 0
 
 ### ToBoolean
 #### Boolean(...)
-- **falsy** - the value will coerce to false
+- **falsy** - 任何会被 `Boolean(...)` 转换成 `false` 的值(the value will coerce to false)
   ```javascript
   undefined
   null
@@ -127,7 +144,9 @@ null --> 0
   NaN
   ''
   ```
-- **truthy** - anything not explicitly on the falsy list is therefore truthy
+
+- **truthy** - 任何不属于 `falsy` 的值都是 `truthy`(anything not explicitly on the falsy list is therefore truthy)
+
 - 看下面两段代码, 体会下通过*包装对象*进和*字面量*行转换后的值的区别
   ```javascript
   var a = new String('');
@@ -148,6 +167,7 @@ null --> 0
   var d = Boolean(a && b && c);
   d; //true
   ```
+
 - **falsy object**
   ```javascript
   document.all; // 为了区别老旧的IE浏览器，大部分现代浏览器都将document.all 隐式转换成boolean值的时候置为false
@@ -222,8 +242,10 @@ b; // '5'
 parseInt('42px'); // 42
 ```
 - 和Number(..)不同，parseInt(...)不会关心字符串整体是否是数字字符(numeric characters)，它只会从左往右找到数字字符进行转换
+
 - 如果以0X或0x开头，会被认为是16进制转换为10进制，如果以0开头，则会认为是8进制转换成10进制
   * 因此对于时间的转换(时分秒)，需要使用第二个参数，即指定转换的进制数(radix)
+
   * 在ES5以后，默认不会有8进制的转换，只有10和16进制，因此只需要注意在ES5以前的环境中使用parseInt转换0开头的字符数字即可
   ```javascript
   parseInt(1/0, 19); // 18
@@ -251,8 +273,10 @@ timestamp = Date.now()
 
 ### bitwise operators (位运算符)
 - 位运算符在JS中只支持`ToInt32`规则，如果超过了32-bit，则运算的结果会被coercion成32位的数字
+
 - `~` 运算符先将操作数转换成32-bit的数字，然后按位求反(performs a bitwise negation) —— 翻转奇偶性(flipping each bit's parity)
   * -1 常被用作标记值，使用 ~-1 会得到0，而这个falsy 值能够被coercion, 因此在写法上能够更语义化
+
   * `~~` 连续使用两个按位非运算符，能够实现截断数字，使之成为整型类型，并且保留正负号；
 但是它和Math.floor()有很大区别，前者是按照32-bit规则去执行运算的，后者则满足64-bit的标准；并且在对负数进行截断(truncate)时，~~表现的结果和Mathi.ceil一致
   ```javascript
@@ -274,14 +298,18 @@ timestamp = Date.now()
 
 ### * --> boolean
 - Boolean(...); 不带new关键字使用内建的方法，虽然很“显”(explicit)，但是并不常用
+
 - unary `!` 操作符 更为常用
+
 - `?:` 三元运算符、`if(...)` 会将条件参数隐式转化成boolean
 
 ----
 
 ## 隐式转换(Implicit Coercion)
 + JS implicit coercion的目的是: 减少冗余的、样板文件、不必要的执行细节，避免代码被各种噪声转移注意，更清晰的显示代码本来的意图
+
 + 某些场景下省略或者抽离类型转换的细节，反而有助于代码的阅读性
+
 + JS的隐式转换总会把值变成原始类型的值，而非复杂类型的值
 
 ### String <--> Number
@@ -292,6 +320,7 @@ timestamp = Date.now()
     {a: 1} + {b: 2}; // '[object Object][object Object]'
     ```
     - 根据ES5 spec, + 运算符如果遇到了一个及以上string类型的操作数，会自动进行字符串拼接
+
     - 如果操作数有对象时，会先将对象valueOf(...)转换成数字, 但默认的valueOf方法不会成功转成原始值, 因此最终会调用toString(...)的方法转换成原始值字符串
 
     ```javascript
@@ -303,8 +332,8 @@ timestamp = Date.now()
     ```javascript
     "" + 3; // "3"
     ```
-  - "" + 3; 和 String(3); 的区别是：前者先调用valueOf(...)方法，然后将其值转换成字符串，后者则是直接调用toString(...)方法
 
+  - "" + 3; 和 String(3); 的区别是：前者先调用valueOf(...)方法，然后将其值转换成字符串，后者则是直接调用toString(...)方法
     ```javascript
     var a = {
       valueOf: function () { return 42; },
@@ -353,6 +382,7 @@ timestamp = Date.now()
   a * 33; // 33
   b * 33; // 0
   ```
+
 - number 到 boolean 则是用 ! 运算符
   ```javascript
   var a = 2;
@@ -383,7 +413,8 @@ timestamp = Date.now()
   3. `while(...)` 和 `do...while(...)`
   4. `(...)?(...):(...)` 第一个条件
   5. `||` 和 `&&` 的左侧操作数
-- || 和 &&
+
+- `||` 和 `&&`
   * 通常定义为logical operators, 但定义为operand selector operators更为恰当, 因为它们会选择一个(only one)的操作数作为返回值，而不是它们运算的布尔值
     ```javascript
     a || b;
@@ -392,8 +423,11 @@ timestamp = Date.now()
     a && b;
     a ? b : a;
     ```
+
   * 从结果来看，|| 和 && 与 ?: 三元运算符保持一致；区别在于它们的运行过程，比如a || b 如果a为truthy，那么只会对a进行一次evaluated，如果是a ? a : b，a会进行两次evaluated
-  * `&&` 又被称为 `guard operator` 或 `short circuiting`,
+
+  * `&&` 又被称为 `guard operator` 或 `short circuiting`
+
   * 虽然`&&` 和 `||`返回的是它们的操作数, 但是在if(...)、while(...) 等语句中, 最终会将它们返回的操作数再一次隐式转换成`boolean`
 
 ----
@@ -407,6 +441,7 @@ timestamp = Date.now()
   s1 + ''; // TypeError
   ```
   ![avatar](./assets/coercion_symbol_err_str.png)
+
 - 对于转换`number`类型, 都会报错
   ```javascript
   const s2 = Symbol(2);
@@ -415,6 +450,7 @@ timestamp = Date.now()
   +s2; // TypeError
   ```
   ![avatar](./assets/coercion_symbol_err_num.png)
+
 - 对于转换`boolean`类型, 则都允许
   ```javascript
   const s3 = Symbol(true);
@@ -444,7 +480,7 @@ timestamp = Date.now()
 - `!=` 和 `!==` 的运算过程是先调用 `==` 或 `===`, 然后将结果取反(negation of the result)
 
 #### Comparing - 字符串 vs 数字
-- 下面这段代码, 在`a == b;` 中, 到底是a转换成字符串还是b转换成数字?
+- 下面这段代码, 在`a == b;` 中, 到底是 `a` 转换成字符串还是 `b` 转换成数字?
   ```javascript
   var a = 42;
   var b = '42';
@@ -648,4 +684,59 @@ timestamp = Date.now()
   - `!` 一元运算符显示的将 `[]` 转换成了 `false`
   - 在进行松比较 `==` 时，此时两边的操作数已然是`[] == false`，因此结果为 `true` 一点也不奇怪
 
-- 
+- 你会发现对于数组的 `[]` 松比较还有很多颠覆我们三观的存在：
+  ```javascript
+  [2] == 2; // true
+  [1] == true; // true
+  [2] == true; // false
+  [0] == false; // true
+  [0] == true; // false
+  [NaN] == 'NaN'; // true
+
+  [null] == ''; // true
+  [null] == false; // true
+  [null] == null; // false ✅safety
+
+  [undefined] == ''; // true
+  [undefined] == false; // true
+  [undefined] == undefined; // false ✅safety
+  ```
+  而发生这一切的罪魁祸首并非隐式转换！根源在于隐式在于松比较 `==` 对 *数组类型* 的值进行隐式转换规则，进一步讲，**真正的问题**出自于 `String(...)` 方法本身：
+    - 首先，如果另一方的操作数是原始值，那么会先调用数组的 `valueOf(...)` 方法，在默认情况下得到的依然是该数组本身
+
+    - 而后，会对调用数组的 `toString(...)` 的方法：
+      - 此时如果数组中的某项存在 `null`、`undefined` 的值那么会被转换成空字符串 `''`
+
+      - 如果是其他的原始值(`Symbol` 除外)，则会符合预期的转换成相应的字符串
+
+      - 如果是对象类型的值，则会调用 `Object.prototype.toString` 方法，转换成 `[object Object]` 的字符串
+
+      - **特别注意**：如果数组中含有 `Symbol` 类型的值，则会报错：
+        ```javascript
+        var a = Symbol('test');
+
+        a; // Symbol(test)
+        [a] === 'test'; // false ✅safety
+        [a] == 'test'; // ❌TypeError
+        ```
+        ![avatar](./assets/coercion_==_err_arr_symbol.png)
+
+    - 最后，变成了字符串和原始类型进行比较，如果类型不同，则进行符合各路ES5条款的隐式转换后比较最终值
+
+- 另一个情况是针对所有的空白字符(`''`、`'\n'`、`' '`)转换成数字的时候其结果都是 `0`
+  ```javascript
+  '' == 0; // true
+  ' ' == 0; // true
+  '\n' == 0; // true
+  '\r' == 0; // true
+
+  '' == false; // true
+  ' ' == false; // true
+  '\n' == false; // true
+  '\r' == false; // true
+
+  Number(''); // 0
+  Number(' '); // 0
+  Number('\n'); // 0
+  Number('\r'); // 0
+  ```
