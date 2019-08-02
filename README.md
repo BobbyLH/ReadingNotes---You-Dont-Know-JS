@@ -15,11 +15,11 @@
 - **async & performance** -- 进行中
 
 ### 导航
-- [开始](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/tree/master/up%20%26%20going) (up & going)
+- [开始](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/tree/master/up%20%26%20going) (up & going) --- 整理中
 
-- [作用域和闭包](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/tree/master/scope%20%26%20closures) (scope & closures)
+- [作用域和闭包](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/tree/master/scope%20%26%20closures) (scope & closures) --- 整理中
 
-- [this和原型](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/tree/master/this%20%26%20object%20prototype) (this & object prototype)
+- [this和原型](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/tree/master/this%20%26%20object%20prototype) (this & object prototype) --- 整理中
 
 - [类型和语法](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/tree/master/types%20%26%20grammar) (type & grammar)
 
