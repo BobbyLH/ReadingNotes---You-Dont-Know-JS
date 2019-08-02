@@ -1,13 +1,12 @@
 # 类型和值(Types & Values) - JS中，变量(variables)没有类型，只有值(values)有类型
 
 ## 基本类型(Scalar Primitives)
-- null
-- undefined
-- boolean
-- number
-- string
-- object
-- symbol
+1. null
+2. undefined
+3. boolean
+4. number
+5. string
+6. symbol
 
 ### undefined
 - undefined区别undeclared，前者是一个变量已经被声明(declared)在作用域中，后者表示没有被声明的变量
