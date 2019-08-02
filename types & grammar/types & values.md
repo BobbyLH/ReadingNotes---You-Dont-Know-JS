@@ -153,16 +153,20 @@
 
 ## 类型的识别
 1. typeof
-  - 只能满足基本类型的检测
-  - 对于null的检查是一个bug
-    ```javascript
-    typeof null === 'object'; // true
-    ```
-  - 能满足对于对于function
-    ```javascript
-    typeof function () {} === 'function'; // true
-    ```
+    - 只能满足基本类型的检测
+
+    - 对于null的检查是一个bug
+      ```javascript
+      typeof null === 'object'; // true
+      ```
+
+    - 能满足对于对于function
+      ```javascript
+      typeof function () {} === 'function'; // true
+      ```
+
 2. instanceof
+
 3. Object.prototype.toString
 
 ----
