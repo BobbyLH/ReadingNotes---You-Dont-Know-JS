@@ -6,7 +6,7 @@
 
 ----
 
-## JS中的抽象运算(abstract operation / internel-only operation)
+## JS中的抽象运算(Abstract Operation / Internel-Only Operation)
 
 ### ToPrimitive
 - 使用 `valueOf(...) & toString(...)` 将复杂类型转换成原始类型，*valueOf*的优先级高于*toString*，如果两个方法都不可用，会抛出*TypeError*
@@ -769,3 +769,30 @@ timestamp = Date.now()
 - 最后盗一张图，来自[Alex Dorey](https://github.com/dorey/JavaScript-Equality-Table)对于一些常见类型的值在和这些值的集合中进行逐一比较的结论：
   ![avatar](./assets/coercion_comparsion.png)
   
+----
+
+## 抽象相关比较(Abstract Relational Comparison)
+- ES5 11.8.5条款中对于 `a < b` 比较只有两条规则：
+  - 两边的操作数都是字符串 `string`，则进行简单的词典式的自然字母表比对
+
+  - 其余的操作数，则先进行 `ToPrimitive` 转换成原始值，而后如果结果中任何一个值都不为 `string` ，那会接着 `ToNumber` 将值转换成数字类型进行比较
+
+  同样的逻辑适用于 `>`
+
+- 匪夷所思的 `>=` 和 `<=`
+  - `>=` 调用的实际过程：首先使用 `<` 比较两边操作数，随后翻转(negate)比较的结果为最终的结果
+
+  - JS 对于 `<=` 的实际解释 **并非小于或等于**，而是 **不大于**(`!a > b`)，同理用于 `>=`，因此会在下面的代码中出现匪夷所思的结果：
+    ```javascript
+    var a = { b: 33 };
+    var b = { b: 33 };
+
+    a < b; // false
+    a == b; // false
+    a > b; // false
+
+    a <= b; // true
+    a >= b; // true
+    ```
+
+- 不幸的是，JS中目前并没有严格的相关比较，即没有一种内建的机制能确保在相关比较中，左右的操作数必须是同一种类型的值。因此如果隐式转换在相关比较中是有帮助的且安全的，那就直接使用它；否则，先使用显示转换操作数，然后再进行相关比较
