@@ -17,3 +17,5 @@
 - [类型转换](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/blob/master/types%20%26%20grammar/coercion.md) (coercion)
 
 - [语法](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/blob/master/types%20%26%20grammar/grammer.md) (grammer)
+
+- [附录](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/blob/master/types%20%26%20grammar/appendix.md) (appendix)
