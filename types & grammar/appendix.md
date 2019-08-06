@@ -33,3 +33,40 @@
   - `Function.prototype` 中的 `Function.prototype.arguments` 和 `Function.caller`，尽管它们已经被宣布弃用(deprecated)，但仍然有不少的老代码中存在，依然要小心
 
 ## 宿主对象(Host Object)
+宿主对象指的是：**创建并提供运行你的JS代码的环境**；通常来讲都有一些内置的对象和函数，例如：
+```javascript
+const div = document.createElement('div');
+
+typeof div; // "object"
+Object.prototype.toString.call(a); // "[object HTMLDivElement]"
+
+a.tagName; // "DIV"
+```
+
+宿主对象内建的变量通常具有的规律：
+  - 可能没办法调用一些内置的方法，比如 `toString()`
+
+  - 不能够被重写
+
+  - 有某些预定义的只读的属性
+
+  - 有一些不能够被改写 `this` 指向的方法
+
+  - ...
+
+## 全局DOM变量
+你可能会意识到，在全局作用域中声明一个变量(无论是否带了 `var`)，都会在 `window`(浏览器) 或者 `global`(node) 对象中存在一个与之名字对应的变量
+
+但是鲜为人知的是你创建一个DOM元素，并且为其赋值一个 `id` 属性，那么就能够在全局获取和 `id` 的值同名的变量：
+```html
+<div id='test'>test</div>
+```
+
+```javascript
+typeof window['test']; // "object"
+'test' in window; //true
+
+console.log( window['test']); // <div id='test'>test</div>
+```
+
+这也是为什么你应该避免在全局作用域下创建变量的原因，如果不得不那么做，至少也应该选择一个不会冲突的名称
