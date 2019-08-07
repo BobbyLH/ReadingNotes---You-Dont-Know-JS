@@ -32,6 +32,8 @@
 
   - `Function.prototype` 中的 `Function.prototype.arguments` 和 `Function.caller`，尽管它们已经被宣布弃用(deprecated)，但仍然有不少的老代码中存在，依然要小心
 
+---
+
 ## 宿主对象(Host Object)
 宿主对象指的是：**创建并提供运行你的JS代码的环境**；通常来讲都有一些内置的对象和函数，例如：
 ```javascript
@@ -54,7 +56,9 @@ a.tagName; // "DIV"
 
   - ...
 
-## 全局DOM变量
+---
+
+## 全局DOM变量(Global DOM Variables)
 你可能会意识到，在全局作用域中声明一个变量(无论是否带了 `var`)，都会在 `window`(浏览器) 或者 `global`(node) 对象中存在一个与之名字对应的变量
 
 但是鲜为人知的是你创建一个DOM元素，并且为其赋值一个 `id` 属性，那么就能够在全局获取和 `id` 的值同名的变量：
@@ -70,3 +74,22 @@ console.log( window['test']); // <div id='test'>test</div>
 ```
 
 这也是为什么你应该避免在全局作用域下创建变量的原因，如果不得不那么做，至少也应该选择一个不会冲突的名称
+
+---
+
+## 内置原型对象(Native Prototypes)
+这一部分作者讲述了自己的一段亲身经历：当他将自己开发的依赖于JQuery的一个插件运用到某个网站时，这个网站挂了；明显的是，他开发的插件能在绝大多数站点上运行，于是他花了大约一周的时间，在这个站点的一处很古老的文件中，终于找到了罪魁祸首：
+
+```javascript
+// Netscape 4 dosen't have Array.push
+Array.prototype.push = function (item) {
+  this.[this.length] = item;
+};
+```
+
+显然，写这段代码的人故作聪明的想给网景浏览器4添加数组的 `push` shim —— 首先，先不说网景公司早就关门了，就说这个年代谁还会关心这样的浏览器？！其次，内建的`push` 可以一次性传入多个参数并推进数组中，就是这个只shim了一部分的半吊子push方法，让作者的代码崩溃了。
+
+所以，对于内置的原型对象，唯一可行的诀窍是 —— 永远不要对它进行拓展，即便是现在看上去非常有用、设计完美、并且有一个合理的名字 —— 你可以选择向 **TC39** 提交申请，让官方来标准化它们
+
+### 垫片(Shims/Polyfills)
+社区中关于部分垫片(partial-polyfill/)是否应该被使用的讨论持续了很久，每个人都有自己的决定，[ES5-Shim](https://github.com/es-shims/es5-shim) 以及 [ES6-Shim](https://github.com/es-shims/es6-shim) 提供了很多新的API的垫片，Babel、Traceur等工具也能够方便将你使用了新特性的代码优雅降级
