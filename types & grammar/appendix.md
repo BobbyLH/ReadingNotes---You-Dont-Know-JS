@@ -93,3 +93,76 @@ Array.prototype.push = function (item) {
 
 ### 垫片(Shims/Polyfills)
 社区中关于部分垫片(partial-polyfill/)是否应该被使用的讨论持续了很久，每个人都有自己的决定，[ES5-Shim](https://github.com/es-shims/es5-shim) 以及 [ES6-Shim](https://github.com/es-shims/es6-shim) 提供了很多新的API的垫片，Babel、Traceur等工具也能够方便将你使用了新特性的代码优雅降级
+
+---
+
+## `<Script>`标签
+通常一个JS应用都会包含若干个 `<script src=...></script`(external file) 或 `<script></script>`(inline) 标签，无论是外链还是内联的JS代码，它们到底是被视为分隔的还是整体的代码？
+
+一个共识是全局作用域是能被共享的，即 `window` 对象(浏览器环境)能被所有的代码块访问和交互
+
+但需要注意的是，全局的变量提升(global variable scope hoisting)不会跨边界：
+```html
+<script>
+  foo(); // ReferenceError
+</script>
+<script>
+  function foo() {}; 
+</script>
+```
+只能这样：
+
+```html
+<script>
+  function foo() {};
+</script>
+<script>
+  foo(); // undefined
+</script>
+```
+
+如果在某个 `<script></script>` 内发生了错误，只会阻止这块JS代码的运行，其余的不会受到阻碍
+
+关于内联和外链的 `script`的区别，最重要的是解释它们内容的字符集(character) —— 前者是由HTML页面的 `meta` 标签的 `charset` 确定的，后者则是根据Script标签中的 `charset` 或其默认值决定：
+```html
+<meta charset="UTF-8">
+
+<script type="text/javascript" src="pathTo/index.js" charset="UTF-8"></script>
+```
+
+---
+
+## 保留字(Reserved Word)
+有四类 **保留字** 不能够用于变量名：
+- 关键字(keywords)，比如 `function`、`switch`
+
+- 未来的保留字(future reserved words)，比如 `enum`
+
+- `null`
+
+- `true` / `false`
+
+ES5以前，保留字甚至不能够作为对象的键名，所幸现在这样的限制已经不存在了：
+```javascript
+const obj = { import: 'test' };
+
+console.log(obj.import);
+```
+
+---
+
+## 执行时的限制(Implementation Limits)
+不同的浏览器使用了不同的JS引擎，它们对于一些极端情况的处理各有不同限制：
+- 字符串字面量允许的最大字符长度的不同限制
+
+- 函数传入参数(实参)的大小的不同限制，即栈大小(stack size)的不同限制
+
+- 函数声明时的形参个数的不同限制
+
+- 最大递归深度的不同限制(how long a chain of function calls from one to the other can be)
+
+- JS代码阻塞主线程最长秒数的不同限制
+
+- 变量名的最大长度的不同限制
+
+- ...
