@@ -1,6 +1,6 @@
 # 读书笔记 之《You Don't Know JS》- 类型和语法
 
-## JS作为一门弱类型语言, 仍然有类型的概念, 如果你打算仔细研究, 强烈推荐[阅读原著](https://github.com/getify/You-Dont-Know-JS/blob/master/types%20&%20grammar/README.md#you-dont-know-js-types--grammar "You Don't Know JS")
+## JS作为一门弱类型语言，仍然有类型的概念，如果你打算仔细研究 —— 强烈推荐[阅读原著](https://github.com/getify/You-Dont-Know-JS/blob/master/types%20&%20grammar/README.md#you-dont-know-js-types--grammar "You Don't Know JS")
 
 ### 简介
 如果投向了`typescript`的怀抱, 很大概率上, 你不会因为碰到无法理解的隐式类型转换从而导致Bug, 但你依然在使用它, 并且毫无知觉!
