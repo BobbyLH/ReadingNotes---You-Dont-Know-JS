@@ -15,7 +15,7 @@
 - **async & performance** -- 进行中
 
 ### 导航
-- [开始](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/tree/master/up%20%26%20going) (up & going) --- 整理中
+- [开始](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/tree/master/up%20%26%20going) (up & going)
 
 - [作用域和闭包](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/tree/master/scope%20%26%20closures) (scope & closures) --- 整理中
 
