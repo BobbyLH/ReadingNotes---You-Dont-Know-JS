@@ -46,7 +46,7 @@ b * 2;
 
 另一个常见的表达式语句叫做 **调用表达式语句** (call expression statement)，整个语句就是一个函数的调用：
 ```javascript
-console.log('test');
+alert('test');
 ```
 
 ### 执行程序(Excuting a Program)
@@ -61,3 +61,33 @@ console.log('test');
 ---
 
 ## 亲自尝试一把(Try It Yourself)
+浏览器的控制台通常是开始写自己第一段JS代码的地方，打开你熟悉的浏览器，用键盘快捷键(keyboard shortcut)快速地打开控制台(自行google)，输入自己的第一行代码：
+```javascript
+a = 21;
+
+b = a * 2;
+
+console.log(b);
+```
+
+### 输出(Output)
+```javascript
+console.log(b);
+```
+- 👆上面代码中，`log(b)` 的部分涉及到函数调用 —— 询问变量 `b` 的值，然后打印到控制台中
+
+- `console.` 部分则是一个对象，它存储了 `log(...)` 函数
+
+### 输入(Input)
+```javascript
+age = prompt("请输入你的年龄：");
+
+console.log(age);
+```
+- `prompt(...)` 唤起了一个弹层，其中有一个输入框，当你输入年龄的数字后，点击确定，就能够在控制台看到你输入的数字被打印了出来
+
+- `age` 变量保存了你输入的数字，这个数字是 `prompt(...)` 函数调用的返回值
+
+---
+
+## 操作符(Operators)
