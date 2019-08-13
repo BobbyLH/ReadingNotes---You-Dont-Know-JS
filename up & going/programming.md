@@ -124,3 +124,36 @@ console.log(a); // 42
 ---
 
 ## 值和类型(Value & Types)
+当你想在JS中表达某个值的时候，你应该基于意图选择不同的类型：
+- 如果你需要数学计算，选择 `number`
+
+- 如果你想将值打印在屏幕上，你需要的是 `string`
+
+- 若你想要在程序中做决定，`boolean` 应该是你不二之选
+
+**字面量(literals)** 就是直接在源码中展示值本身，即：
+```javascript
+"test message";
+'test message';
+
+50;
+
+true;
+false;
+```
+
+### 类型之间的转换(Converting Between Types)
+为了将不同类型的值转换成合适的类型，JS内部有一种叫 **"coercion"** 的机制为我们提供了便捷：
+```javascript
+var a = '20';
+var b = Number(a);
+
+console.log(a); // "20"
+console.log(b); // 20
+```
+
+更多关于类型转换的内容，请查阅 [*types & grammer*](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/tree/master/types%20%26%20grammar) 一章
+
+---
+
+## 注释(Code Comments)
