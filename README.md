@@ -15,15 +15,15 @@
 - **async & performance** -- 进行中
 
 ### 导航
-- [开始](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/tree/master/up%20%26%20going) (up & going)
+- [开始](/up%20%26%20going/README.md) (up & going)
 
-- [作用域和闭包](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/tree/master/scope%20%26%20closures) (scope & closures) --- 整理中
+- [作用域和闭包](/scope%20%26%20closures/README.md) (scope & closures) --- 整理中
 
-- [this和原型](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/tree/master/this%20%26%20object%20prototype) (this & object prototype) --- 整理中
+- [this和原型](/this%20%26%20object%20prototype/README.md) (this & object prototype) --- 整理中
 
-- [类型和语法](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/tree/master/types%20%26%20grammar) (type & grammar)
+- [类型和语法](/types%20%26%20grammar/README.md) (type & grammar)
 
-- [异步和优化](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/tree/master/async%20%26%20performance) (async & performance) --- 进行中
+- [异步和优化](/async%20%26%20performance/README.md) (async & performance) --- 进行中
 
-- [ES6+](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/tree/master/es6%20%26%20beyond) (ES6 & Beyond) --- 未开始
+- [ES6+](/es6%20%26%20beyond/README.md) (ES6 & Beyond) --- 未开始
 

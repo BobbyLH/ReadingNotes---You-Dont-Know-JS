@@ -193,6 +193,52 @@ console.log(b); // 20
   var age = /* 20 is value of age */20;
   ```
 
-  ---
+---
 
-  ## 变量(Variables)
+## 变量(Variables)
+所谓变量，就是一个存储值的 **符号容器(symbolic container)**，它包含的值在你程序运行的过程中是可以变化的
+
+在某些编程语言中，你声明的变量在一开始就指定好了容纳值的类型，它们关注的是变量的类型，术语称 *静态类型(static typing)*，也叫做 *强制类型(type enforcement)*；通常认为这样的特性有助于预防无意间的值转换
+
+而另一些语言强调的是值的类型，允许变量在任何时候都能容纳任何类型的值，术语称 *动态类型(dynamic typing)*，也叫做 *弱类型(weak typing)*；通常认为这样的特性更有灵活性
+
+JS是一种弱类型语言，它申明变量时没有涉及任何关于类型的信息，并且在任何时候都能轻松的使用不同类型的值替代当前容纳的值：
+```javascript
+var num = 99;
+
+num = num * 2;
+
+console.log(num); // 198
+
+num = '$' + num;
+
+console.log(num); // "$198"
+```
+
+除了变量，JS中也有常量，ES6中的 `const` 关键字用于常量；安装习惯，常量通常是大写的，并且用 `-` 来分隔多个字符：
+```javascript
+const TAX_RATE = 0.05;
+```
+
+更多的关于类型的内容，详见[Types&Grammer](../types%20%26%20grammar/README.md)一章
+
+---
+
+## 块(Blocks)
+在JS中，通常使用花括号 `{ ... }` 来定义一个块：
+```javascript
+var num = 99;
+
+{
+  num = num * 2;
+  console.log(num); // 198
+}
+```
+
+块出现的典型场景的是在控制语句中，比如 `if(...) {}` 条件判断或 `for (...) {}` 循环语句中
+
+和大多数的语句不同，块语句在结尾处可以不用带上分号 `;`
+
+---
+
+## 条件(Conditionals)

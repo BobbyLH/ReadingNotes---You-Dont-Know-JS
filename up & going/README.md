@@ -8,4 +8,4 @@
 第三节介绍了作者为什么要写这本开源书，以及它解决了什么，值得一读
 
 ### 导航
-- [进入编程](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/blob/master/up%20%26%20going/programming.md) (programming)
+- [进入编程](/programming.md) (programming)

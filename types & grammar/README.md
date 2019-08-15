@@ -10,12 +10,12 @@
 放下对隐式转换的陈见, 仔细的观察它的运行机制, 然后优雅的在你的代码中加入它们(当然还有注释)
 
 ### 导航
-- [类型和值](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/blob/master/types%20%26%20grammar/types%20%26%20values.md) (types & values)
+- [类型和值](/types%20%26%20values.md) (types & values)
 
-- [内建对象](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/blob/master/types%20%26%20grammar/natives.md) (natives)
+- [内建对象](/natives.md) (natives)
 
-- [类型转换](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/blob/master/types%20%26%20grammar/coercion.md) (coercion)
+- [类型转换](/coercion.md) (coercion)
 
-- [语法](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/blob/master/types%20%26%20grammar/grammer.md) (grammer)
+- [语法](/grammer.md) (grammer)
 
-- [附录](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/blob/master/types%20%26%20grammar/appendix.md) (appendix)
+- [附录](/appendix.md) (appendix)
