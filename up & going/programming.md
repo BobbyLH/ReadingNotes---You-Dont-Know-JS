@@ -220,7 +220,7 @@ console.log(num); // "$198"
 const TAX_RATE = 0.05;
 ```
 
-更多的关于类型的内容，详见[Types&Grammer](../types%20%26%20grammar/README.md)一章
+更多的关于类型的内容，详见[Types & Grammer](../types%20%26%20grammar/README.md)一章
 
 ---
 
@@ -242,3 +242,76 @@ var num = 99;
 ---
 
 ## 条件(Conditionals)
+在JS程序中，想要表达 *条件*(做决定)，通常使用 `if` 语句：
+```javascript
+var a = 100;
+var b = 50;
+
+if (a > b) {
+  console.log('a is bigger than b');
+} else {
+  console.log('a is smaller than b')
+}
+```
+
+需要注意的是，在 `if` 语句的圆括号里，期望的值是 `布尔`(boolean)类型的值，如果传入的不是这种类型的值，会进行相应的转换(coercion)，具体规则详见[Types & Grammer - coercion](../types%20%26%20grammar/coercion.md)一章
+
+---
+
+## 循环(Loop)
+所谓的循环，即 **重复的执行某个操作，直到条件不满足为止**，换言之即 **仅在条件满足的时候重复某项操作**
+
+一个标准的循环包含了 *测试条件*(test condition) 和 *块*(block) —— `{...}`；每一次循环执行块时，叫做 *迭代*(iteration)
+
+下面👇是 `while` 和 `do..while` 循环的例子：
+```javascript
+while (num > 0) {
+  console.log('log some message');
+
+  num = num - 1;
+}
+
+do {
+  console.log('log some message');
+
+  num = num - 1;
+} while (num > 0)
+```
+
+`do..while` 和 `while` 循环唯一的区别是前者无论条件 `(num > 0)` 满足与否，都会先执行第一次的迭代，后者必须满足条件才能执行第一次的迭代
+
+关键字 `break` 能够打断循环，例如在下面👇的无限循环中，可以通过 `break` 终止循环：
+```javascript
+var i = 0;
+
+while(true) {
+  if (i >= 9) {
+    break;
+  }
+
+  console.log(i);
+  i = i + 1;
+}
+// 0 1 2 3 4 5 6 7 8 9
+```
+
+**Tips**: 由于各种历史原因，编程语言中的计数通常以 `0` 开始，比如 `var i = 0;` 而不是 `var i = 1;`
+
+除了 `while` 循环，还有 `for` 循环也能完成上面的工作：
+```javascript
+for (var i = 0; i <= 9; i++) {
+  console.log(i);
+}
+// 0 1 2 3 4 5 6 7 8 9
+```
+
+`for` 循环的 `(...)` 中有三个分句：
+- 初始化分句 `var i = 0`
+
+- 测试条件分句 `i <= 9`
+
+- 更新分句 `i++`
+
+---
+
+### 函数(Function)
