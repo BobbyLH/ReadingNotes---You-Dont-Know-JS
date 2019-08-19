@@ -314,4 +314,54 @@ for (var i = 0; i <= 9; i++) {
 
 ---
 
-### 函数(Function)
+## 函数(Function)
+函数最大的作用是 **复用逻辑**，即将一段逻辑放在函数内部，然后每次调用(call)该函数，那么函数里面的代码会就会自动执行。即便是这段代码只会被调用一次，函数也能被看作是将 **相关代码组织到命名(函数名)集合中**。
+
+### 作用域(Scope)
+在JS中，每一个函数都有自己的 *作用域*，也叫 *词法作用域*(lexical scope)。作用域说白了就是 *变量集合* 以及针对这些变量的 *访问规则* —— 只有函数内部的代码才能访问函数作用域里的变量。
+
+在同一个作用域内，变量名是唯一的，但是不同作用域可以出现同名的变量：
+```javascript
+function foo () {
+  var a = 1;
+  console.log(a);
+}
+
+function bar () {
+  var a = 2;
+  console.log(b);
+}
+
+foo(); // 1
+bar(); // 2
+```
+
+作用域也能嵌套另一个作用域，在最深处的的作用域能够访问嵌套其所有外层作用域的变量：
+```javascript
+function outer () {
+  var a = 1;
+  
+  function inner () {
+    var b = 2;
+    console.log(a + b); // 3
+
+    function innermost () {
+      var c = 3;
+
+      console.log((a + b) * c); // 9
+    }
+
+    innermost();
+  }
+
+  inner();
+
+  console.log(a); // 1
+}
+
+outer();
+```
+
+---
+
+## 练习(Practice)
