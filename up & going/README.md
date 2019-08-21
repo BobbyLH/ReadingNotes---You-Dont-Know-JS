@@ -9,3 +9,5 @@
 
 ### 导航
 - [进入编程](/up%20%26%20going/programming.md) (programming)
+
+- [进入Javascript](/up%20%26%20going/javascript.md) (javascript)
