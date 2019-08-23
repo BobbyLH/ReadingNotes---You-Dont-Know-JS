@@ -58,6 +58,69 @@ __Warning__：`typeof null` 返回的是一个 `"object"`，虽然这是一个 _
 - `void(undefined)` —— 使用 `void` 运算符
 
 ### 对象(Object)
+对象是一个键值对的形式的集合，即由字符串类型的 *属性名*(properties)包含 *任意* 的复合值的集合：
+```javascript
+var obj = {
+  a: "text",
+  b: 22,
+  c: false
+};
+
+obj.a; // "text"
+obj.b; // 22
+obj.c; // false
+
+obj[a]; // "text"
+obj[b]; // 22
+obj[c]; // false
+```
+
+从对象中获取属性可以用 `.` 点运算符(dot notation) 或者 `[]` 括号运算符(bracket notation) —— 前者更常用也更方便阅读，后者在属性名含有 *特殊字符* 或者用 *变量* 时使用：
+```javascript
+var obj = {
+  a: "text",
+  b: 22,
+  'test string': false
+};
+var b = 'a';
+
+obj['test string']; // fasle
+obj[b]; // "text"
+obj['b']; // 22
+```
+
+#### 数组(Arrays)
+数组是对象的一个子类型，但它的键是由数字类型的 *索引*(indexed) 组成的，并且内置了一个 `length` 的属性表示数组的长度：
+```javascript
+var arr = ["text", 22, false];
+
+arr[0]; // "text"
+arr[1]; // 22
+arr[2]; // false
+arr.length; // 3
+
+typeof arr; // "object"
+```
+
+`length` 属性会自动根据数组的长度进行更新，但如果你自定义了非数字类型的属性名，那么新增的不会计入到 `length` 中；因此正常的使用数组的方式还是用数字类型的索引
+
+#### 函数(Functions)
+函数也是对象的一个子类型：
+```javascript
+function foo () {
+  return 22;
+}
+
+foo.bar = 'text';
+
+typeof foo; // "function"
+typeof foo(); // "number"
+typeof foo.bar; // "string"
+```
+
+虽然 `typeof foo;` 生成的结果是 `"function"`，然而函数依然可以像对象一样拥有属性，这也意味着函数是对象的一个子类型
+
+### 原始类型的方法(Built-In Type Methods)
 
 
 
