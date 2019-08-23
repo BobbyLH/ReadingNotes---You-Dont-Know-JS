@@ -118,7 +118,7 @@ typeof foo(); // "number"
 typeof foo.bar; // "string"
 ```
 
-虽然 `typeof foo;` 生成的结果是 `"function"`，然而函数依然可以像对象一样拥有属性，这也意味着函数是对象的一个子类型
+虽然 `typeof foo;` 生成的结果是 `"function"`，然而函数依然可以像对象一样拥有属性，这也意味着函数是对象的一个子类型(subtype)
 
 ### 原始类型的方法(Built-In Type Methods)
 
