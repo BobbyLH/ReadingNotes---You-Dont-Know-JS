@@ -120,7 +120,44 @@ typeof foo.bar; // "string"
 
 虽然 `typeof foo;` 生成的结果是 `"function"`，然而函数依然可以像对象一样拥有属性，这也意味着函数是对象的一个子类型(subtype)
 
-### 原始类型的方法(Built-In Type Methods)
+### 内置类型的方法(Built-In Type Methods)
+内置(built-in)类型以及子(subtype)类型暴露出来的一些属性和方法十分有用：
+```javascript
+var a = 'text';
+var b = 3.14159;
 
+a.length; // 4
+a.toUpperCase(); // "TEXT"
+b.toFixed(4); // "3.1416"
+```
+
+👆`a.toUppercase()` 之所以能够这样被调用，在其底层有较为复杂的逻辑；简单讲，有一个 `String` 包装对象，通常称为内置对象(native)，与原始类型的 `string` 配对，在其原型对象`prototype`上，定义了这个叫做`toUpperCase` 的方法。当你像对象一样查询 `"text"` 的属性或者方法时，JS会自动帮我们 *包装(boxes)* 一层与之配对的对象(该例中就是 `String` 对象) —— 对于 `number` 类型的就是 `Number` 对象，`boolean` 类型的就是 `Boolean` 对象。
+
+### 比较值(Comparing Values)
+在JS中，有两种比较的类型：*相等(equality)* 和 *不相等(inequality)* 比较。无论比较的值是什么类型，比较的最终结果都是布尔值。
+
+#### 类型转换(Coercion)
+JS中有两种形式的类型转化：*显示的(explicit)* 和 *隐式的(implicit)* —— 前者是你能够明显在代码中看到的，后者是指在某些不注意的地方发生的副作用的操作产生的转换。
+
+类型转换不是魔鬼，相反在很多地方它都很有用 —— 对于写出可读的、合理的、易于理解的代码有很大帮助：
+```javascript
+var a = "22";
+// 显示转换 explicit
+var b = Number(a);
+
+a; // "22"
+b; // 22
+```
+
+```javascript
+var a = "22";
+// 隐式转换 implicit
+var b = a * 1;
+
+a; // "22"
+b; // 22
+```
+
+### Turthy 和 Falsy
 
 
