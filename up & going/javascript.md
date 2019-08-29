@@ -348,3 +348,73 @@ foo(); // 5 7 9
 ---
 
 ## 条件(Conditionals)
+在JS中要做条件判断，除了 `if` 语句，还可以用 `switch` 语句：
+```javascript
+if (a == 2) {
+  // ...
+} else if (a == 3 || a == 5) {
+  // ...
+} else if (a == 6) {
+  // ...
+} else {
+  // fallback
+}
+
+switch (a) {
+  case 2:
+    // ...
+    break;
+  case 3:
+  case 5:
+    // ...
+    break;
+  case 6:
+    // ...
+    break;
+  default:
+    // fallback
+}
+```
+
+注意 `switch` 语句中的 `break`，它能让你只运行匹配的 `case` 的语句，如果忽略了它，那么除了匹配的 `case`，剩下的所有 `case` 都会运行，直到遇到下一个 `break` 语句。
+
+`?:` _条件/三元 运算符(conditional/ternary operator)_ 是另一种条件判断的形式：
+```javascript
+var a = 3;
+
+var b = a > 2 ? 5 : 4;
+```
+
+---
+
+## 严格模式(Strict Mode)
+严格模式是ES5新增的，它能够让你的代码更安全，也更有准则，你可以应用在整个文件中，也可以用在单独的某个函数内：
+```javascript
+"use strict"
+
+function foo () {
+  // ...
+}
+```
+
+```javascript
+function foo () {
+  "use strict"
+  // ...
+}
+```
+
+严格模式中最具价值的一点是不允许 *由于忽略了 `var` 而隐式的创建全局变量*：
+```javascript
+function foo () {
+  "use strict"
+  a = 2;
+}
+
+foo();
+```
+![avatar](./assets/javascript_strict_mode.png)
+
+---
+
+## 函数作为值(Functions As Values)
