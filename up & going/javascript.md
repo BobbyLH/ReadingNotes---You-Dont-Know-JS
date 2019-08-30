@@ -418,3 +418,50 @@ foo();
 ---
 
 ## 函数作为值(Functions As Values)
+函数 `function` 就和 `22`、`'txt'`、`[1,2,3]` 一样都是值(也可以理解成表达式) —— 你不仅可以向函数传递参数，函数也能作为值赋值给某个变量：
+```javascript
+var foo = function () {
+  // ...
+};
+
+var bar = function baz () {
+  console.log('in baz');
+  console.log(baz);
+}
+```
+
+👆第一个表达式将一个 _匿名(anonymous)函数_ 赋值给变量 `foo`；第二个表达式将名为 `baz` 的函数赋值给变量 `bar`，此时在外层作用域只能通过 `bar` 访问到这个函数：
+![avatar](./assets/javascript_function_as_value.png)
+
+### 立即执行函数表达式(Immediately Invoked Function Expressions IIFEs)
+一个 _immediately invoked function expression(IIFE)_ 的🌰：
+```javascript
+(function () {
+  console.log('It is a IIFE!');
+})()
+```
+
+👆上面的函数被一个括号 `()` 包裹，意味着这个函数表达式并不是普通意义上的函数声明表达式；并且在其后还有一个 `()` ，表明立即对这个函数表达式进行调用。
+
+因为 **IIFE** 本质上是一个函数，且函数本身有一个作用域，因此 **IIFE** 常用于创建一个局部作用域的模块：
+```javascript
+var a = 22;
+
+(function () {
+  var a = 10;
+  console.log(a); // 10
+})()
+
+console.log(a); // 22
+```
+
+**IIFE** 也能有返回值：
+```javascript
+var x = (function () {
+  return 39;
+})()
+
+console.log(x); // 39
+```
+
+### 闭包(Closure)
