@@ -431,6 +431,7 @@ var bar = function baz () {
 ```
 
 👆第一个表达式将一个 _匿名(anonymous)函数_ 赋值给变量 `foo`；第二个表达式将名为 `baz` 的函数赋值给变量 `bar`，此时在外层作用域只能通过 `bar` 访问到这个函数：
+
 ![avatar](./assets/javascript_function_as_value.png)
 
 ### 立即执行函数表达式(Immediately Invoked Function Expressions IIFEs)
