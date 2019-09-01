@@ -466,3 +466,61 @@ console.log(x); // 39
 ```
 
 ### 闭包(Closure)
+你可以这样理解 _闭包_ 这个概念：即使一个函数已经执行完毕，但是依然能够继续访问函数内部作用域的地方：
+```javascript
+function createAdd (x) {
+  return function (y) {
+    return x + y;
+  }
+}
+
+var add1 = createAdd(4);
+add1(5); // 9
+add1(12); // 16
+
+var add2 = createAdd(10);
+add2(5); // 15
+add2(10); // 20
+
+createAdd(10)(10); // 20
+```
+
+👆上面就是一个闭包的简单呈现，`createAdd` 函数调用后会返回一个 _匿名函数_ 并保存在变量 `add1` 和 `add2` 中，而这个 _匿名函数_ 可以访问到传入 `createAdd` 的参数 `x`；后续调用 `add1` 和 `add2` 就能获取 `x` 和本次调用传参 `y` 的值，最终返回两者相加 `x + y;` 的结果。
+
+例如：`var add 1 = createAdd(4);`，此时 `x` 的值就被保存为 `4`，而后调用 `add1(5);`，此时参数 `y` 的值就是 `5`，因此返回 `4 + 5;` 的结果为 `9`。
+
+`createAdd(10)(10);` 这个其实是一样的道理，只不过是将两次调用一起触发了，在第一次 `createAdd(10)` 返回一个 _匿名函数_ 后，马上触发这个 _匿名函数_ 的调用 `...(10)`，因此结果就为 `10 + 10;` 即 `20`。
+
+#### 模块(Modules)
+闭包常用的功能就是实现了JS的 _模块化_。_模块化_ 能够让你定义一个 _私有的_ 执行环境 —— 即外界无法探知这个环境内部的情况，只能通过内部暴露出来的 _公共 API_ 访问 _模块_ 提供的能力：
+```javascript
+function User () {
+  var username, password;
+
+  function login (name, pwd) {
+    username = name;
+    password = pwd;
+
+    // do ajax(...) request
+  }
+
+  var publicAPI = {
+    login
+  };
+
+  return publicAPI;
+}
+
+var bobby = User();
+bobby.login('bobby', 'pwd123456');
+```
+
+上面的 `User` 就是一个 *模块*，其中的 `username` 和 `password` 在外部是无法直接访问到的。但它对外暴露 `publicAPI` 对象，该对象中提供了登陆 `login` 的能力，通过暴露的 `login` 其实上能间接的获取 `username` 和 `password` 的值，然后进行登陆操作。
+
+每执行一次 `User()` 都会返回一个新的 _模块的实例(instance of module)_，这是一个全新的作用域，和其他由 `User()` 创建的作用域互不干涉。
+
+**Warning**：区别使用 `new` 关键字对 `User` 进行类的实例化 `new User()` —— `User` 仅仅是一个函数，而非类，并且使用 `new` 不合时宜也浪费资源。
+
+---
+
+## `this` 标识符(Identifier)
