@@ -562,3 +562,42 @@ new foo(); // undefined
 ---
 
 ## 原型(Prototypes)
+JS中有这样一种机制：当你在某个对象上 _查找(reference)_ 某个属性时，如果该属性不存在，JS会自动调用对象内建的 **prototype** 原型对象继续查找该属性，如果该原型对象也没有，那还会继续查找这个原型对象自身的原型对象……直至 最顶层 `Object.prototype.__proto__` (值为`null`) —— 你可以认为这种机制是当属性缺失时的一个 _退路(fallback)_。
+
+原型对象是在对象创建时一起创建的，可以使用 `Object.create(...)` 的API来构建通过 **prototype** 实现的对象和对象之间的联系：
+```javascript
+var foo = {
+  a: 22
+};
+
+var bar = Object.create(foo);
+
+bar.b = 'txt';
+
+bar.b; // 'txt'
+bar.a; // 22
+```
+
+👆`bar` 中确确实实没有属性 `a`，但通过 *原型链(prototype-linked)* `bar.a` 就能访问到 `foo.a` —— 这是一个被广泛用于JS *伪装类继承* 的底层逻辑，实质上它的本质是 [*行为代理(behavior delegation)*](../this%20%26%20object%20prototype/README.md)。
+
+---
+
+## 过去和现在(Old & New)
+现在每年都有有很多JS的新特性被发布，但是由于JS依然需要运行在客户端提供的宿主环境中(浏览器)，因此JS的运行环境是我们开发者没办法保证的一件事情。但这并不意味着我们要等上所有的用户都升级或更换他们的浏览器时，我们才能使用这些新特性 —— *polyfilling* 和 *transpiling* 是两个主要的解决方案。
+
+### 垫片(Polyfilling)
+*"polyfill"* 是指为了能够在老旧的JS运行环境中，使用JS新特性而生成一段 *与新特性等效的且兼容老旧环境* 的代码。
+
+比如ES6中的 `Number.isNaN(...)` 能够检测值是否是 `NaN`，但是在老旧的运行环境中这个方法是不存在的，因此你可以 `polyfill` 这个特性，然后开始放心的使用它：
+```javascript
+if (!Number.isNaN) {
+  Number.isNaN = function (val) {
+    return val !== val;
+  };
+};
+```
+**Tips**：`NaN` 是JS中唯一一个和自身不相等的值
+
+需要注意的是，并非所有的新特性都是 *polyfillable* 的，有时候大部分的特性能够被 *polyfilled*，但依然有小部分的特性无法做到。
+
+### (转译)Transpiling
