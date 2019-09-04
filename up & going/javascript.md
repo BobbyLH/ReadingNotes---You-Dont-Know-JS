@@ -586,7 +586,7 @@ bar.a; // 22
 现在每年都有有很多JS的新特性被发布，但是由于JS依然需要运行在客户端提供的宿主环境中(浏览器)，因此JS的运行环境是我们开发者没办法保证的一件事情。但这并不意味着我们要等上所有的用户都升级或更换他们的浏览器时，我们才能使用这些新特性 —— *polyfilling* 和 *transpiling* 是两个主要的解决方案。
 
 ### 垫片(Polyfilling)
-*"polyfill"* 是指为了能够在老旧的JS运行环境中，使用JS新特性而生成一段 *与新特性等效的且兼容老旧环境* 的代码。
+*"polyfill"* 是指为了能够在老旧的JS运行环境中使用JS新特性，而生成一段 *与新特性等效的且兼容老旧环境* 的代码。
 
 比如ES6中的 `Number.isNaN(...)` 能够检测值是否是 `NaN`，但是在老旧的运行环境中这个方法是不存在的，因此你可以 `polyfill` 这个特性，然后开始放心的使用它：
 ```javascript
@@ -600,4 +600,50 @@ if (!Number.isNaN) {
 
 需要注意的是，并非所有的新特性都是 *polyfillable* 的，有时候大部分的特性能够被 *polyfilled*，但依然有小部分的特性无法做到。
 
-### (转译)Transpiling
+### 转译(Transpiling)
+将带有新特性的代码转换成能兼容老旧运行环境的过程，称为 *转译(transpiling)* —— _转换(transforming)_ + _编译(compiling)_。
+
+从本质上说，你依然使用新的特性来编写JS代码，但是在你部署上线的时候，需要进行编译的动作，将你使用了新特性的JS代码编译成兼容老旧环境的代码。
+
+关于为什么不直接用老旧的语法书写代码，有三点：
+1. 新的语法能够让你的代码更具可读性、更便于维护，不仅对于你，更是对于你团队的成员负责；
+
+2. 如果你会对于新老环境做区分 —— 即将转译后的代码应用到老旧环境，但新环境仍然使用新特性的代码，这会让新环境表现更优异，并且还能促使环境供应商(浏览器厂商)测试和优化他们的产品；
+
+3. 使用新特性也能够给 _TC39(Javascript committee)_ 提供更早的反馈，问题暴露的越早越能够即使修复和更改这些问题，避免造成 _永久的Bug_，比如 `typeof null; // "object"`……
+
+一个🌰，关于ES6新增的函数默认参数的新特性的：
+```javascript
+function foo (a = 2) {
+  console.log(a);
+};
+foo(); // 2
+foo(22); // 22
+```
+
+👆上面代码会被转译成：
+```javascript
+function foo () {
+  var a = arguments[0] !== (void 0) ? arguments[0] : 2;
+  console.log(a);
+}
+```
+
+---
+
+## 非JS(Non-Javascript)
+极为常见的 _non-Javascript_ 的 JS代码是 DOM API：
+```javascript
+var element = document.getELementById('root');
+```
+
+👆`document` 是一个特殊的对象，通常称为 **宿主对象(host object)**，它不是由JS引擎提供的，也不在JS的规范中，而是由运行环境(浏览器)提供的。
+
+在`document` 上面的 `getElementById(..)` 方法看起来和普通的函数调用区别不大，但实际上也是由 _DOM_ 提供的内置方法。
+
+这本书专注于JS这门语言，因此对于非JS的涉及较少，但你依然要意识到它们的存在，因为它们会在你的程序中无处不在。
+
+---
+
+## 复盘(Review)
+这章只是基础的了解了一部分JS的核心机制，比如 `value、type、closure、this、prototype` 等。熟悉这些概念后，再继续往下深入探索。
