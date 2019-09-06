@@ -15,9 +15,9 @@
 - **async & performance** -- 进行中
 
 ### 导航
-- [开始](/up%20%26%20going/README.md) (up & going) --- 进行中
+- [开始](/up%20%26%20going/README.md) (up & going)
 
-- [作用域和闭包](/scope%20%26%20closures/README.md) (scope & closures) --- 整理中
+- [作用域和闭包](/scope%20%26%20closures/README.md) (scope & closures) --- 进行中
 
 - [this和原型](/this%20%26%20object%20prototype/README.md) (this & object prototype) --- 整理中
 
