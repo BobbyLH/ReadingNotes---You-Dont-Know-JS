@@ -181,7 +181,7 @@ foo(2); // 4
 ```
 ![avatar](./assets/what's_scope_error.png)
 
-因为👆 `console.log(a + b)` 的语句中，对 *RHS* 的 `b` 进行查询，未果(属于 *undeclared*)，抛出了 `ReferenceError` 的错误。
+在👆 `console.log(a + b)` 的语句中，对 *RHS* 的 `b` 进行查询，未果(属于 *undeclared*)，因此抛出了 `ReferenceError` 的错误。
 
 相反地，如果对于一个 *LHS* 的值进行查询，但最终未找到时，要区分是否处于 *严格模式(Strict Mode)* 中：如果是，则同样会报 `ReferenceError` 的错；如果不是，则会在 *全局作用域* 中创建一个 *与该查询的变量名同名* 的新变量。
 
