@@ -11,3 +11,5 @@
 - [什么是作用域](/scope%20%26%20closures/what's%20scope.md) (what's scope)
 
 - [词法作用域](/scope%20%26%20closures/lexical.md) (lexical scope)
+
+- [函数和块级作用域](/scope%20%26%20closures/function%20%26%20block.md) (Function vs. Block Scope)
