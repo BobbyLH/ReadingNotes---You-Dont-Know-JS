@@ -26,4 +26,52 @@ console.log(a, b, c);
 
 软件设计中有一项 *最小特权原则(Principle of Least Privilege)*，又称为 *最小权利/暴露(Least Authority/Exposure)* —— 你应该只暴露最需要的 *API*，而 *隐藏* 所有的其他细节。
 
-在JS中，如果你将所有的变量和函数都暴露在全局作用域下，那么不仅违背了这一原则，并且还会让你代码质量变得很差！
+在JS中，如果你将所有的变量和函数都暴露在全局作用域下，那么不仅违背了这一原则，并且还会让你代码质量变得很差！比如👇的代码：
+```javascript
+function foo (a) {
+  b = b + bar (a * 2);
+  console.log(b * 3);
+};
+
+function bar (a) {
+  return a - 1;
+};
+
+var b = 2;
+foo(2); //15
+```
+
+变量 `b` 和函数 `bar` 暴露在外部，任何对它们的修改都可能会导致函数 `foo` 产出的结果变化；正确的做法是把暴露在外面的变量和函数都放到函数 `foo` 的内部，如此一来 `foo` 所产生的结果不会受到潜在影响：
+```javascript
+function foo (a) {
+  var b = 2;
+  function bar (c) {
+    return c - 1;
+  };
+
+  b = b + bar (a * 2);
+  console.log(b * 3);
+};
+
+foo(2); //15
+```
+
+### 避免冲突(Collision Avoidance)
+*隐藏* 变量的另一个好处是能够避免由于使用了相同的变量名而产生意外的冲突。
+```javascript
+function foo () {
+  function bar (a) {
+    i = 3;
+    console.log(a + 1);
+  };
+
+  for (var i = 0; i < 10; i++) {
+    bar(i * 2);
+  };
+};
+
+foo();
+```
+👆函数 `bar` 能够访问在 `for` 循环模块中声明的变量 `i`，并且对它重新赋值；这就会导致一个 *无限的死循环(infinite loop)* —— 无论 `for` 循环进行到哪一步，其内部调用的 `bar` 都会重新赋值 `i = 3;`，因此永远也不能满足 `i < 10` 的终止循环的条件。
+
+#### 全局命名空间(Global "Namespaces")
