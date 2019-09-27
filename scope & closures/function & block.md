@@ -129,7 +129,7 @@ setTimeout(function () {
   throw new Error();
 })();
 ```
-![avatar](./assets/function_block_anonymous_track.png.png)
+![avatar](./assets/function_block_anonymous_track.png)
 
 2. 递归(recursion)、`arguments.callee`、事件绑定后的解绑操作、定时器的清除操作……都需要通过函数名引用函数自身，但显然匿名函数不具备这个功能；
 
