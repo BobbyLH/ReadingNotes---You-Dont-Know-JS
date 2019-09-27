@@ -122,4 +122,36 @@ setTimeout(function () {
 }, 1000)
 ```
 
-函数表达式能够匿名，但函数声明式不能。
+函数表达式能够匿名，但函数声明式不能。虽然匿名函数表达式用起来很爽，甚至还有不少的工具库鼓励这种代码书写模式，但是匿名函数带来的缺点也不少：
+1. 匿名函数在调用栈中没有有用的名称(anonymous)，这会导致debug的难度变大：
+```javascript
+(function () {
+  throw new Error();
+})();
+```
+![avatar](./assets/function_block_anonymous_track.png.png)
+
+2. 递归(recursion)、`arguments.callee`、事件绑定后的解绑操作、定时器的清除操作……都需要通过函数名引用函数自身，但显然匿名函数不具备这个功能；
+
+3. 好的函数名，本身也为一个更可读、更易于维护的代码环境提供基础；而匿名函数显然只能通过别的方式，比如注释来提高代码的可读性。
+
+*内联函数表达式(Inline function expression)* 是很有用的机制；即便是匿名函数带来的这些问题，也不能够影响它的江湖地位；而且社区中也有针对此的最佳实践：
+```javascript
+setTimeout(function timer () { // 函数名 timer
+  console.log('wait 1 second')
+}, 1000)
+```
+
+### 立即执行函数表达式(Invoking Function Expression Immediately)
+```javascript
+var a = 2;
+(function () {
+  var a = 3;
+  console.log(a); // 3
+})();
+
+console.log(a); // 2
+```
+
+👆**IIFE(Immediately Invoking Function Expression)**
+
