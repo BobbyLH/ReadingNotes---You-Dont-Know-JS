@@ -153,5 +153,64 @@ var a = 2;
 console.log(a); // 2
 ```
 
-👆**IIFE(Immediately Invoking Function Expression)**
+👆这就是 **IIFE(Immediately Invoking Function Expression)**，第一个括号 `()` 包裹了整个函数体，第二个括号可以看做是函数的参数容器，第三个括号则是用于执行函数。当然，**IIFE** 可以是匿名的，但是加上一个函数名的 **IIFE** 好处更多。
 
+**IIFE** 的另一种使用方式就是执行一个函数，并传递参数：
+```javascript
+var a = 2;
+
+(function IIFE (win) {
+  var a = 3;
+  console.log(a); // 3
+  console.log(win.a); // 2
+})(window);
+
+console.log(a); // 2
+```
+
+👆上面的 **IIFE** 还能颠倒参数和执行函数的位置，这源于函数在JS中是一等公民的特性 —— 即函数能作为参数传递，也能作为值赋值给变量：
+```javascript
+var a = 2;
+(function IIFE (fn) {
+  fn(window)
+})(function def (win) {
+  var a = 3;
+  console.log(a); // 3
+  console.log(win.a); // 2
+});
+```
+
+## 块级作用域(Blocks As Scopes)
+虽说由函数创建局部作用域是JS中使用最为广泛的方式，但其他的方式，比如使用 *块* 来创建局部作用域，不仅更简单直接，而且还易于维护。
+
+一个很常见的 *块级作用域* 来自 `for` 循环语句：
+```javascript
+for (var i = 0; i < 10; i++) {
+  console.log(i);
+}
+```
+
+我们在写 `for` 循环语句时，可能只是想声明一个变量 `i` 作为一个循环的控件，并在每次循环中操作这个变量，已实现对循环的掌控(继续或结束)。但我们可能忽略了这个变量 `i` 会被声明在当前的执行作用域中(全局或是局部)。
+
+这就是所谓的 *块级作用域* —— 变量会被嵌入到离声明它尽可能局部和近的地方：
+```javascript
+var foo = true;
+
+if (foo) {
+  let bar = foo * 2;
+  bar = (function (num) {
+    return ++num;
+  })(bar);
+  console.log(bar); // 3
+};
+
+console.log(bar); // ReferenceError
+```
+![avatar](./assets/function_block_block_scope.png)
+
+**Note**: 👆上面使用了 `let`，这是 *ES6* 的新特性，稍后会提及。
+
+### `with`
+之前提及到的 `with` 能够动态的创建作用域，虽然这是一个很危险且不推荐的语法，但它的确能够在其语句的声明周期内，生成 *块级作用域*。
+
+### `try/catch`
