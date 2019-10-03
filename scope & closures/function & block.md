@@ -214,3 +214,31 @@ console.log(bar); // ReferenceError
 之前提及到的 `with` 能够动态的创建作用域，虽然这是一个很危险且不推荐的语法，但它的确能够在其语句的声明周期内，生成 *块级作用域*。
 
 ### `try/catch`
+一个鲜为人知的块级作用域是在 `try/catch` 语句中的 `catch` 中：
+```javascript
+try {
+  null();
+} catch (err) {
+  console.error('try catch:', err);
+}
+
+console.log(err); // ReferenceError
+```
+![avatar](./assets/function_block_trycatch.png)
+
+👆由此可见，`err` 只存在于 `catch` 语句中，外部是无法访问到的。除了在一些非常老旧的IE浏览器中不支持之外，这个在 *ES3* 中确定标准在绝大部分浏览器中都得到了很好的支持。
+
+
+### `let`
+*ES6* 中引入了关键字 `let`，这是除了 `var` 之外的另一种声明变量的方式。`let` 会让任何在块级作用域(通常是 `{…}`)中声明的变量都是局部变量：
+```javascript
+var a = true;
+
+if (a) {
+  let b = a * 1;
+  console.log(b); // 2
+};
+
+console.log(b); //ReferenceError
+```
+
