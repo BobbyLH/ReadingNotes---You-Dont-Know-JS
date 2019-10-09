@@ -242,3 +242,83 @@ if (a) {
 console.log(b); //ReferenceError
 ```
 
+👆在 `if {…}` 语句中的 `let b` 就是一个块级作用域，因为它被花括号 `{…}` 包裹起来；但若不仔细留意，这可能会带来一些困扰，特别是在代码重构的时候。另一种做法是显示的用 `{…}` 将 `let` 包裹起来，明确的指出这就是一个块级作用域：
+```javascript
+var a = true;
+
+if (a) {
+  {
+    // explicit block
+    let b = a * 1;
+    console.log(b); // 2
+  }
+};
+
+console.log(b); //ReferenceError
+```
+
+块级作用域中，使用 `let` 或 `const` 声明的变量不会出现 *变量提升(hoist)*，想要使用它们，只能等到它们的声明语句出现后：
+```javascript
+{
+  console.log(bar); // ReferenceError
+  let bar = 2;
+}
+```
+<img src="./assets/function_block_hosit.jpg" width="600px" />
+
+#### 垃圾回收(Garbage Collection)
+块级作用域的另一个作用是帮助闭包释放多余的内存，更利于垃圾回收：
+```javascript
+function foo (data) {
+  // do something
+};
+
+var someData = {
+  a: 3,
+  b: {
+    c: 'test'
+  }
+};
+
+foo(someData);
+
+var btn = document.getElementById('button');
+
+btn.addEventListener('click', function click (e) {
+  console.log('button clicked');
+}, false);
+```
+
+👆你可能会认为 `someData` 这个变量会被垃圾机制回收，因为 *button* 的 `click` 事件根本用不上它们。但实际JS引擎认为 *button* 的回调函数能够访问整个作用域，因此也会将整个作用域(包含了 `someData`)保留下来放在内存中，而不会被垃圾回收。这个时候如果使用块级作用域，则会很好的解决这个问题：
+```javascript
+function foo (data) {
+  // do something
+};
+
+{
+  let someData = {
+    a: 3,
+    b: {
+      c: 'test'
+    }
+  };
+  foo(someData);
+}
+
+
+var btn = document.getElementById('button');
+
+btn.addEventListener('click', function click (e) {
+  console.log('button clicked');
+}, false);
+```
+
+#### `let` 循环(let loops)
+在 `for` 循环中使用 `let` 做局部变量，避免变量名污染，是个常见的例子：
+```javascript
+for (let i = 0; i < 10; i++) {
+  console.log(i);
+}
+
+console.log(i); // ReferenceError
+```
