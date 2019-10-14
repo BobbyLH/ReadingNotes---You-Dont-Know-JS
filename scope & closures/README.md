@@ -13,3 +13,5 @@
 - [词法作用域](/scope%20%26%20closures/lexical.md) (lexical scope)
 
 - [函数和块级作用域](/scope%20%26%20closures/function%20%26%20block.md) (Function vs. Block Scope)
+
+- [提升](/scope%20%26%20closures/hoisting.md) (Hoisting)
