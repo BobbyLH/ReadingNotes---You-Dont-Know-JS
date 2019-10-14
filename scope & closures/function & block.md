@@ -351,6 +351,7 @@ if (foo) {
 console.log(a);
 console.log(b);
 ```
+<img src="./assets/function_block_const.png" width="450px" />
 
 ## 回顾(Review)
 在JS中创建局部作用域，最通常的工具是使用函数；除此之外，由 `{…}` 和 `let`、`const` 配合使用也能创建出块级作用域。从 *ES3* 开始，`try/catch` 中的 `catch` 语句也具备块级作用域的功能。
