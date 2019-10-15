@@ -43,6 +43,7 @@ foo(); // TypeError
 var foo = function () {};
 ```
 ![avatar](./assets/hoisting_function_expression.png)
+
 👆报错信息是 `TypeError`，证明变量 `foo` 的确是声明了，否则应该是提示 `ReferenceError`；但变量的赋值还未发生，因此 `foo` 在执行的时候并不是一个函数，所以有 `TypeError` 这个错误。
 
 简单来说，*函数声明(function declarations)* 能够提升值，*函数表达式(function expressions)* 只能提升其变量名。
