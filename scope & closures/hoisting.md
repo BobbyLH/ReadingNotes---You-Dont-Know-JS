@@ -53,7 +53,7 @@ bar(); // ReferenceError
 
 var foo = function bar() {};
 ```
-👆上面的代码片段可等效于：
+👆上面的代码片段可等效于👇：
 ```javascript
 var foo;
 
