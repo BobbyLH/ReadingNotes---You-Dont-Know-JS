@@ -92,3 +92,33 @@ baz();
 👆但其本质依然是保持某个函数对其能访问的作用域的引用。
 
 ## 如何观察(How I Can See)
+*闭包* 无处不在：
+
+```javascript
+function wait (msg) {
+  setTimeout(function () {
+    console.log(msg);
+  }, 1000)
+};
+
+wait('I am a test message');
+```
+
+👆在 `wait` 中的 `setTimeout` 形成了一个 *闭包*，而这个 *闭包* 能保持对变量(函数的参数) `msg` 的访问 —— 在执行完 `wait` 的1000毫秒后，函数 `wait` 的内部作用域，按道理讲应该已经被垃圾回收了，但传入进 `setTimeout` 的回调函数依然能访问 `msg` 变量。
+
+### 闭包(closure)
+定时器、事件处理、Ajax请求、web worker、跨Tab页交互……无论是同步还是异步，只要你传入了回调函数 `callback`，你不得不准备好迎接 *闭包* 的到来。
+
+**注意(Note)**：*IIFE* 模式实际 *并非* 是一个观察 *闭包* 的好例子：
+```javascript
+var a = 2;
+
+(function () {
+  console.log(a);
+})();
+```
+👆在 *IIFE* 中，对于变量 `a` 的 *RHS*，实际上是通过正常的词法作用域来查找的，而非通过 *闭包*。
+
+虽然 *IIFE* 自身并不能成为一个 *闭包* 的例子，但是它创建了一个局部作用域，这个作用域和闭包有着千丝万缕的关系。
+
+## 循环 + 闭包(Loop + Closure)
