@@ -122,3 +122,44 @@ var a = 2;
 虽然 *IIFE* 自身并不能成为一个 *闭包* 的例子，但是它创建了一个局部作用域，这个作用域和闭包有着千丝万缕的关系。
 
 ## 循环 + 闭包(Loop + Closure)
+*for循环* 是经典的展示 *闭包* 的例子：
+```javascript
+for (var i = 1; i <= 5; i++) {
+  setTimeout(function timer () {
+    console.log( i );
+  }, i * 1000);
+}
+```
+
+![avatar](./assets/closure_loop+closure_1.png)
+
+👆和期待打印出 `1`，`2`，`3`，`4`，`5` 相反，这段代码只会打印出5个 `6` —— 这是因为当变量 `i` 大于 `5` 时才会停止 *for循环* ，这个时候 `i` 的值是 `6`，而执行了5次的 `setTimeout` 中的回调函数，它们实际上只共享一个全局作用域，这个作用域包含了变量 `i`(值为6) —— 这其实和写5次 `setTimeout(…)` 没有本质的区别，千万别让循环语句迷惑了你！
+
+如果我们就是想要打印出 `1`，`2`，`3`，`4`，`5` 呢？那就要用到更多的 *闭包* 了：
+```javascript
+for (var i = 1; i <= 5; i++) {
+  (function (i) {
+    setTimeout(function timer () {
+      console.log( i );
+    }, i * 1000);
+  })(i)
+}
+```
+
+![avatar](./assets/closure_loop+closure_2.png)
+
+或者是：
+```javascript
+for (var i = 1; i <= 5; i++) {
+  (function () {
+    var j = i;
+    setTimeout(function timer () {
+      console.log( j );
+    }, i * 1000);
+  })()
+}
+```
+
+![avatar](./assets/closure_loop+closure_3.png)
+
+### 块级作用域重游(Block Scoping Revisted)
