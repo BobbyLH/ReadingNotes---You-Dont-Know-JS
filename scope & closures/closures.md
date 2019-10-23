@@ -126,7 +126,7 @@ var a = 2;
 ```javascript
 for (var i = 1; i <= 5; i++) {
   setTimeout(function timer () {
-    console.log( i );
+    console.log(i);
   }, i * 1000);
 }
 ```
@@ -140,7 +140,7 @@ for (var i = 1; i <= 5; i++) {
 for (var i = 1; i <= 5; i++) {
   (function (i) {
     setTimeout(function timer () {
-      console.log( i );
+      console.log(i);
     }, i * 1000);
   })(i)
 }
@@ -154,7 +154,7 @@ for (var i = 1; i <= 5; i++) {
   (function () {
     var j = i;
     setTimeout(function timer () {
-      console.log( j );
+      console.log(j);
     }, i * 1000);
   })()
 }
@@ -163,3 +163,32 @@ for (var i = 1; i <= 5; i++) {
 ![avatar](./assets/closure_loop+closure_3.png)
 
 ### 块级作用域重游(Block Scoping Revisted)
+*IIFE* 可以在每次遍历的时候创建一个 *闭包*(本质上是一个记录了当前作用域范围的新的作用域)，但如果想要用块级作用域实现一样的功能呢：
+```javascript
+for (var i = 1; i <= 5; i++) {
+  let j = i;
+  setTimeout(function timer () {
+    console.log(j);
+  }, j * 1000);
+}
+```
+
+![avatar](./assets/closure_loop+closure_block_scope_1.png)
+
+👆 *for循环* 的每一次遍历，本质上都是创建了一个块级作用域，而每一次遍历，使用 `let` 声明的变量 `j` 只能被当前的块作用域访问到，因此在 `console.log(j);` 语句执行 *RHS* 查询时，首先找到的是该块级作用域中声明的变量 `j`，它的值就是每次声明时，用 `i` 对其进行赋值的值。
+
+但是请等等，还没完：
+```javascript
+for (let i = 1; i <= 5; i++) {
+  setTimeout(function timer () {
+    console.log(i);
+  }, i * 1000);
+}
+```
+
+![avatar](./assets/closure_loop+closure_block_scope_2.png)
+
+👆这样的现象说明了一个事实：在 *for循环* 头部用 `let` 声明的变量，是属于每一次遍历迭代的块级作用域的。并且上一次迭代的值(经过 `i++` 后)，都会被赋值给这一次的变量声明。
+
+## 模块(Modules)
+另外一种用到 *闭包(closure)* 的代码涉及模式并未使用 *回调函数(callback)*，它叫 *模块(module)*。
