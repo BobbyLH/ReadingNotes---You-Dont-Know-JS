@@ -192,3 +192,65 @@ for (let i = 1; i <= 5; i++) {
 
 ## 模块(Modules)
 另外一种用到 *闭包(closure)* 的代码涉及模式并未使用 *回调函数(callback)*，它叫 *模块(module)*。
+
+```javascript
+function FooModule () {
+  var something = 'foo';
+  var another = [1, 2, 3];
+
+  function doSomething () {
+    console.log(something);
+  }
+
+  function doOtherthing () {
+    console.log(another.join('!'));
+  }
+
+  return {
+    doSomething,
+    doOtherthing
+  };
+}
+
+var foo = FooModule();
+
+foo.doSomething(); // foo
+foo.doOtherthing(); // 1!2!3
+```
+
+👆 全局作用域下的变量 `foo` 保存了函数 `FooModule` 的执行结果，其中 `foo.doSomething();` 和 `foo.doOtherthing();` 两个方法的执行都依赖了 *闭包* —— 它们在全局作用域中，依然能访问关于 `FooModule` 的局部作用域中的变量 `something` 和 `another`。
+
+这种代码设计模式被称为 *模块* —— 隐藏了一些内部细节(比如变量 `something` 和 `another`)，但是对外暴露出了一些 *公共的API* (比如 `FooModule` 返回的对象中的 `doSomething` 和 `doOtherthing`) 能访问这些隐藏的细节。
+
+简单来讲，模块的设置模式应该遵循：
+  1. 有一个面向外部作用域的 *封闭的函数*，并且至少被调用一次(每次调用都创建了一个新的模块实例)；
+
+  2. 这个 *封闭的函数* 必须至少返回一个内部函数，也因此这个内部函数能够通过 *闭包* 访问这个 *封闭的函数* 的局部作用域，并能够获取、修改内部作用域的私有的属性和状态。
+
+关于 *单例模式(singleton pattern)* 的一种实践：
+```javascript
+var foo = (function FooModule () {
+  var something = 'foo';
+  var another = [1, 2, 3];
+
+  function doSomething () {
+    console.log(something);
+  }
+
+  function doOtherthing () {
+    console.log(another.join('!'));
+  }
+
+  return {
+    doSomething,
+    doOtherthing
+  };
+})();
+
+foo.doSomething(); // foo
+foo.doOtherthing(); // 1!2!3
+```
+
+👆使用 *IIFE* 立即执行 `FooModule` 函数，而后将唯一的一个实例结果绑定在变量 `foo` 上。
+
+### 现代模块(Modern Modules)
