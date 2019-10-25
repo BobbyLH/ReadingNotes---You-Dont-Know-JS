@@ -254,3 +254,58 @@ foo.doOtherthing(); // 1!2!3
 👆使用 *IIFE* 立即执行 `FooModule` 函数，而后将唯一的一个实例结果绑定在变量 `foo` 上。
 
 ### 现代模块(Modern Modules)
+在真实的代码开发中，需要用到的模块可能会有很多个，一般来说需要一个统一管理的机制，👇下面代码仅作为一个展示作用：
+
+```javascript
+const Module = (function moduleManager () {
+  let modules = {};
+
+  function define (name, deps, impl) {
+    for (let i = 0; i < deps.length; i++) {
+      deps[i] = modules[deps[i]];
+    }
+    modules[name] = impl.apply(impl, deps);
+  }
+
+  function get (name) {
+    return modules[name];
+  }
+
+  return {
+    define,
+    get
+  }
+})();
+```
+
+👆关键的代码是 `modules[name] = impl.apply(impl, deps);`，这行代码会调用自定义用于包裹模块的函数，同时结果储存到变量 `modules` 中。而一旦需要使用定义好的模块时，就能通过 `get` 方法传入模块名获取相应的模块了。实际的使用过程如下：
+
+```javascript
+Module.define('bar', [], function () {
+  return {
+    hello: function (name) {
+      return 'Hello, ' + name;
+    }
+  }
+});
+
+Module.define('foo', ['bar'], function (bar) {
+  return {
+    awesome: function () {
+      console.log(bar.hello('bob').toUpperCase());
+    }
+  }
+});
+
+const bar = Module.get('bar');
+const foo = Module.get('foo');
+
+console.log(bar.hello('bob')); // Hello, bob
+foo.awesome(); // HELLO, BOB
+```
+
+![avatar](./assets/closure_modern_module.png)
+
+👆可以看出，对于变量 `modules` 的引用来自于暴露出的 *API* —— `get` 方法。而操作这个变量也是通过 `define` 方法进行。因此不难发现，模块实现的底层就是利用了 *闭包*。
+
+### 未来的模块(Future Modules)
