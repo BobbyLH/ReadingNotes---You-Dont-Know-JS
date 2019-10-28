@@ -309,3 +309,54 @@ foo.awesome(); // HELLO, BOB
 👆可以看出，对于变量 `modules` 的引用来自于暴露出的 *API* —— `get` 方法。而操作这个变量也是通过 `define` 方法进行。因此不难发现，模块实现的底层就是利用了 *闭包*。
 
 ### 未来的模块(Future Modules)
+ES6规范中以“第一等公民”的态度对待 *模块(modules)* —— 它将每个文件都视为一个单独分隔的模块，每一个模块都能引入别的模块，也能被别的模块所引入。
+
+*基于函数的模块(Function-based modules)* 并不是静态模式 —— 即它们暴露出的API只会在代码 *运行时(run-time)* 被解析到，因此你也能够在代码运行的过程中，动态的编辑和修改这些暴露出来的API。
+
+但 *ES6 Module API* 是静态的，因此 *编译器* 会在编译阶段就知道它们的存在，这带来的好处是如果模块不存在或者有错误，*编译器* 能够在编译阶段就抛出错误，而不必等待代码运行时才抛出错误；其次这也能够带来代码性能的优化，因为在编译阶段，编译器就能够对代码进行一些分析和编译，从而实现优化代码。
+
+*ES6 Module* 没有 *行内(inline)* 的说法，它们必须被定义在单独分离文件中，JS引擎有一个默认的 *模块加载器*，它能实现同步的加载模块。
+
+#### bar.js
+```javascript
+function bar (name) {
+  return 'Hello, ' + name;
+}
+
+export bar;
+```
+
+#### foo.js
+```javascript
+import { bar } from 'bar';
+
+var name = 'bob';
+
+function foo (name) {
+  console.log(bar(name).toUpperCase());
+}
+
+export foo;
+```
+
+#### index.js
+```javascript
+import { bar } from 'bar';
+import { foo } from 'foo';
+
+console.log(bar('lili')); // Hello, lili
+
+foo(); // HELLO, BOB
+```
+
+👆 `import` 关键字是用于引入一个模块暴露出的API到当前的作用域中，每个API都能够访问自身的作用域，比如在 *index.js* 中的 `foo` 模块，就能访问其内部作用域中的变量 `name`，因此调用 `foo()` 时，就能获取到 `name` 的值为 `'bob'`；`export` 关键字用于暴露模块的某个API，暴露出的API能够被反复多次的调用。
+
+和 *基于函数的模块(Function-based modules)* 一样，*ES6模块* 文件中的内容被视为是一个 *封闭的作用域闭包*。
+
+## 回顾(Review)
+原文中这样描述 *闭包*：
+**Closure is when a function can remember and access its lexical scope even when it's invoked outside its lexical scope.**
+
+简单来说就是：*有一个函数，它作为值被传递或者返回，而后通过调用这个函数，能够访问这个函数曾经能访问的作用域*。为什么要加上 *曾经* 呢？因为就目前这个函数所处的作用域来看的话，你用其他办法是无法访问到之前的那个作用域的，而这个函数保存了那个作用域的引用，因此能够访问到。
+
+闭包在我们的代码中无处不在：*循环*、*回调函数*，甚至是 *ES6 模块*。而利用 *闭包* 实现 *模块* 的设计模式，是它非常有用而又无处不在的一个事实！
