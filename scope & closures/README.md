@@ -17,3 +17,5 @@
 - [提升](/scope%20%26%20closures/hoisting.md) (Hoisting)
 
 - [闭包](/scope%20%26%20closures/closures.md) (Closures)
+
+- [附录-A](/scope%20%26%20closures/Appendix-A.md) (Appendix-A)
