@@ -19,3 +19,5 @@
 - [闭包](/scope%20%26%20closures/closures.md) (Closures)
 
 - [附录-A](/scope%20%26%20closures/Appendix-A.md) (Appendix-A)
+
+- [附录-B](/scope%20%26%20closures/Appendix-B.md) (Appendix-B)
