@@ -19,7 +19,7 @@
 
 - [作用域和闭包](/scope%20%26%20closures/README.md) (scope & closures)
 
-- [this和原型](/this%20%26%20object%20prototype/README.md) (this & object prototype) --- 进行中
+- [对象和类](/objects%20%26%20classes/README.md) (objects & classes) --- 进行中
 
 - [类型和语法](/types%20%26%20grammar/README.md) (type & grammar)
 
