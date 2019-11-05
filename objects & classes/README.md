@@ -6,4 +6,4 @@
 
 
 ### 导航
-- [`this` Or That](/objects%20%26%20classes/this%20Or%20That.md) (`this` Or That)
+- [`this` Or That](/objects%20%26%20classes/this%20or%20That.md) (`this` Or That)
