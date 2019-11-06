@@ -31,3 +31,4 @@ speak.call(b); // Hello, I am Bob
 ```
 
 👆这段代码借助 `this`，能让我们在 `a` 和 `b` 两个不同的 *上下文(context)* 之间自由的切换，复用已有的逻辑。
+
