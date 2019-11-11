@@ -65,7 +65,7 @@ speak(b); // Hello, I am Bob
 ## 困惑(Confusions)
 在正式开始之前，我们还需要消除两个常见的误区，特别是当我们从字面的意思去理解 `this`时，通常会有两种设想，但都是不对的。
 
-### 它自己(Itself)
+### Itself
 第一种常见的假设是认为 `this` 指代的就是函数本身。虽然从语义上来讲貌似合理，且不说能从函数名直接获取对函数的引用，但为什么我们需要用 `this` 来指代函数自身呢？是要进行 *递归(recursion)* 操作还是在某个事件的回调函数中，操作它自身以便解除事件的绑定？
 
 很多开发者都认同在JS中 *一切皆是对象* 的观念 —— 即便是函数，也不过是一种数据储存的对象形式而已 —— 如果从这样的角度去认知和使用函数，那就太局限了。
@@ -128,3 +128,41 @@ setTimeout(function () {
   // cannot refer to itself
 });
 ```
+
+一个 *非常不赞成(deprecated and frowned-upon)* 使用的非常老旧的API能够解决👆匿名函数的问题 —— `arguments.callee`。它能够在函数内部指向函数自身，这也是通常匿名函数用来访问自身的唯一途径。然而，正确的姿势不是使用匿名函数而后调用 `arguments.callee` —— 你应该直接为需要调用自身的函数绑定一个函数名。
+
+所以，另一种解决办法是直接获取对 `foo` 函数的引用，然后对 `foo.count` 进行操作：
+```js
+function foo (num) {
+  console.log('foo: '+ num);
+
+  foo.count++;
+}
+
+foo.count = 0;
+
+for (let i = 0; i < 5; i++) {
+  foo(i);
+}
+
+console.log(foo.count); // 5
+```
+
+不过，还有一种办法能让你使用了 `this` 的同时，还能修改 `foo.count` —— 用 `call` 内置方法显示的绑定 `this` 的指向：
+```js
+function foo (num) {
+  console.log('foo: '+ num);
+
+  this.count++;
+}
+
+foo.count = 0;
+
+for (let i = 0; i < 5; i++) {
+  foo.call(foo, i);
+}
+
+console.log(foo.count); // 5
+```
+
+### Its Scope
