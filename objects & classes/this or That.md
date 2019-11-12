@@ -166,3 +166,26 @@ console.log(foo.count); // 5
 ```
 
 ### Its Scope
+另一个关于 `this` 的误区是认为它指代 *函数的作用域*，这是个棘手的问题(tricky question)，因为有的场景中是正确的，但有的场景中反而会成为误导。
+
+`this` 无论从哪个方面来讲，都不能指代 *词法作用域(lexical scope)* —— 因为词法作用域虽然犹如一个对象一般具有各种属性能够被访问，但其本质是JS引擎的内部实现，而非真实的能够被JS代码方位的一个对象。
+
+下面的代码显然以为 `this` 可以访问词法作用域：
+```js
+function foo () {
+  var a = 2;
+  this.bar();
+}
+
+function bar () {
+  console.log('bar: ', this.a);
+}
+
+foo(); // bar: undefined
+```
+
+显然，`this.bar();` 的确调用了函数 `bar`，但显然这种调用的思路是基于 `this` 能够访问全局作用域 —— 那干嘛不直接使用词法作用域来调用 `bar();` 呢？其次，在函数 `bar` 中使用 `this.a` 的企图是通过 `this` 来搭个桥 —— 在函数 `foo` 中写出 `this.bar();`，想让 `this` 来指代 `foo` 的函数作用域，以便访问到变量 `a` —— 想太多！！
+
+`this` 不能作为词法作用域的指代！！`this.bar();` 能够访问只不过是将全局作用域作隐式的为上下文绑定到 `this` 上而已，仅此而已！
+
+## What's `this`?
