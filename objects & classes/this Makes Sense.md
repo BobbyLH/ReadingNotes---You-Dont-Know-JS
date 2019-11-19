@@ -86,3 +86,41 @@ var a = 2;
 ```
 
 ### 隐式绑定规则(Implicit Binding)
+另一个 `this` 的绑定规则需要关注：函数的 *调用点* 是否有 *上下文对象(context object)*；换句话说，*调用点* 是否拥有或包含某个对象：
+```js
+function foo () {
+  console.log(this.a);
+}
+
+var obj = {
+  a: 2,
+  foo
+}
+
+obj.foo(); // 2
+```
+
+首先，无论函数 `foo` 是提前声明而后被加入到对象 `obj` 中的，还是 `foo` 伴随对象初始化时才一并声明，这都不是重点。重点是函数 `foo` 被 `obj` 所包含，当然你也可理解成对象 `obj` 保存了对函数 `foo` 的引用指针。
+
+`obj.foo();` 在函数 `foo` 调用之前还有一个对于 `obj` 的引用，这个 `obj` 就是之前提到的 *上下文对象*。而这正好符合 `this` 的 *隐式绑定* 规则 —— `this` 绑定到函数引用的对象 `obj` 上，因此 `this.a` 指代的就是 `obj.a`。
+
+多层引用时，只有最后一层的对象引用才会绑定到 `this` 上：
+```js
+function foo () {
+  console.log(this.a);
+}
+
+var obj2 = {
+  a: 42,
+  foo
+};
+
+var obj1 = {
+  a: 2,
+  obj2
+};
+
+obj1.obj2.foo(); // 42
+```
+
+#### 隐式绑定的丢失问题(Implicitly Lost)
