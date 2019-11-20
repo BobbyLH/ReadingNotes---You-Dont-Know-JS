@@ -38,7 +38,7 @@ baz(); // the bar call-site
 ## 规定，不是乌龟的屁股(Nothing But Rules)
 想要知道 `this` 的绑定指向，我们必须先查看 *调用点*，并根据 **4** 个既定的规则来知晓 `this` 的真实指向。
 
-### 默认绑定规则(Default Binding)
+### 默认绑定(Default Binding)
 第一个场景是我们最为熟知的，即 *单独地调用某个函数(standalone function invocation)*。你可以把这个规则理解成其他绑定规则都没生效时，对于 `this` 绑定的 缺省/默认规则。
 
 ```js
@@ -55,7 +55,7 @@ foo(); // 2
 
 紧接着，我们调用函数 `foo` 而后执行其中的代码块 `console.log(this.a);` 获取到了变量 `a` 的值并将结果打印在控制台上。为什么 `this.a` 能够获取变量 `a` 的值？ —— 我们先查看 *调用点(call-site)*，发现对于函数 `foo` 是 *单独调用* 的，则可以确认应用的是默认绑定规则，因此这时候的 `this` 绑定的是全局对象。
 
-但如果，我们使用了 *严格模式* —— `"use strict";`，`this` 的默认绑定的 *全局对象* 则会被替换成 `undefined`。
+但如果，我们使用了 *严格模式(strict mode)* —— `"use strict";`，`this` 的默认绑定的 *全局对象* 则会被替换成 `undefined`。
 
 ```js
 function foo () {
@@ -85,7 +85,7 @@ var a = 2;
 })();
 ```
 
-### 隐式绑定规则(Implicit Binding)
+### 隐式绑定(Implicit Binding)
 另一个 `this` 的绑定规则需要关注：函数的 *调用点* 是否有 *上下文对象(context object)*；换句话说，*调用点* 是否拥有或包含某个对象：
 ```js
 function foo () {
@@ -124,3 +124,69 @@ obj1.obj2.foo(); // 42
 ```
 
 #### 隐式绑定的丢失问题(Implicitly Lost)
+一个常见的令人困惑在于 `this` 的隐式绑定会丢失，并退回到默认绑定规则，即 `this` 要么指向全局对象，要么是 `undefined`，这取决于是否应用了 *严格模式*👇：
+
+```js
+function foo () {
+  console.log(this.a);
+}
+
+var obj = {
+  a: 2,
+  foo
+};
+
+var bar = obj.foo;
+
+var a = 'lost binding';
+
+bar(); // "lost binding"
+```
+
+👆虽然变量 `bar` 显然是对 `obj.foo` 的引用，但是关键点还是在于 *调用点* —— `bar();` 显然是一个没有任何 *上下文对象(context object)* 的函数调用，因此使用了默认规则也不足为奇了。
+
+*回调函数* 是另一个更微妙、更普遍、更反预期的丢失隐式绑定的场景👇：
+
+```js
+function foo () {
+  console.log(this.a);
+}
+
+var obj = {
+  a: 2,
+  foo
+};
+
+function doFoo (callback) {
+  callback && callback();
+}
+
+var a = 'lost binding';
+
+doFoo(obj.foo); // "lost binding"
+```
+
+👆向 `doFoo(obj.foo);` 传递参数时，虽然 `obj.foo` 是有对象的引用，但函数并没有被调用，此时并不是我们提到的 *调用点*。真正的 *调用点* 还是 `callback && callback();` —— 没有涉及任何的 *上下文对象(context object)*。
+
+你可能会想，如果我使用内建的方法接受回调的方法，是否情况有所改变呢？：
+
+```js
+function foo () {
+  console.log(this.a);
+}
+
+var obj = {
+  a: 2,
+  foo
+};
+
+var a = 'lost binding';
+
+setTimeout(obj.foo, 1000); // "lost binding"
+```
+
+![avatar](./assets/this_all_makes_sense_now_implicit_lose.png)
+
+答案显然是 **依然会丢失** —— 关键依然是在 *调用点* 上。
+
+### 显示绑定(Explicit Binding)
