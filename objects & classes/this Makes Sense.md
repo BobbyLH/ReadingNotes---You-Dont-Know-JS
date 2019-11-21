@@ -190,3 +190,47 @@ setTimeout(obj.foo, 1000); // "lost binding"
 答案显然是 **依然会丢失** —— 关键依然是在 *调用点* 上。
 
 ### 显示绑定(Explicit Binding)
+了解了默认绑定和隐式绑定的规则后，有一部分的 `this` 指向场景能满足我们的需求了，但如果我们想要强制将某个函数的 `this` 绑定到某个 *上下文对象* 上，而又不想将这个函数作为这个 *上下文对象* 的某个方法来调用，这时候就需要使用 *显示绑定* 规则了。
+
+`call(…)` 和 `apply(…)` 是每个函数都具备的内置方法，它们的使用基本类似，第一个参数都是绑定到 `this` 的 *上下文对象*，后面的则是调用该方法(`call` 和 `apply`)的函数所需要的参数，完成这些后，立即执行这个函数：
+
+```js
+function foo () {
+  console.log(this.a);
+}
+
+var obj = {
+  a: 2
+};
+
+foo.call(obj); // 2
+```
+
+如果你将 *原始值(primitive value)*(`string`、`number`、`boolean`) 作为第一个参数传入 `call` 或 `apply`，那么这些原始值将会被隐式转换成 *包装对象*(`new String(…)`、`new Number(…)`、`new Boolean(…)`)。
+
+但好像显示绑定也并没有解决隐式绑定丢失 `this` 的问题？！
+
+#### 硬绑定(Hard Binding)
+围绕着显示绑定实现的一种绑定模式，能够解决丢失 `this` 的问题：
+
+```js
+function foo () {
+  console.log(this.a);
+}
+
+var obj = {
+  a: 2
+};
+
+var a = 'lost binding';
+
+function bar () {
+  foo.call(obj);
+}
+
+setTimeout(bar, 1000);
+
+bar.call(window);
+```
+
+👆函数 `bar` 无论是作为回调函数，还是自身的 `this` 被显示的绑定到全局对象(`window`)，调用它都只会在控制台打印出 `2` 即 `obj.a` 的值 —— 因为其内部只会将 `foo` 的 `this` 显示的绑定到 `obj` 上。这样的绑定模式我们称为 *硬绑定*。
