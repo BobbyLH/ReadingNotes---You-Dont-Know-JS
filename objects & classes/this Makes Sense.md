@@ -234,3 +234,51 @@ bar.call(window);
 ```
 
 👆函数 `bar` 无论是作为回调函数，还是自身的 `this` 被显示的绑定到全局对象(`window`)，调用它都只会在控制台打印出 `2` 即 `obj.a` 的值 —— 因为其内部只会将 `foo` 的 `this` 显示的绑定到 `obj` 上。这样的绑定模式我们称为 *硬绑定*。
+
+改进一下，你可以将需要进行硬绑的函数和 *上下文对象* 作为参数传递：
+
+```js
+function foo (num) {
+  console.log(this.a, num);
+
+  return this.a + num;
+}
+
+function simpleBind (fn, ctx) {
+  return function () {
+    return fn.apply(ctx, arguments);
+  }
+}
+
+var obj = {
+  a: 2
+};
+
+var a = 'lost binding';
+
+var bar = simpleBind(foo, obj);
+
+var b = bar(5); // 2 5
+console.log(b); // 7
+```
+
+👆上面代码中的 `simpleBind` 是内置的 `bind` 方法的部分功能简单实现，内置的 `bind` 方法不仅能够返回一个已经为 `this` 绑定了 *上下文对象* 的函数，并且这个函数还有一个 `name` 属性的值为 `bound foo`，即绑定了 `this` 的函数 `foo`。
+
+#### API调用的 “上下文”(API Call "Context")
+很多第三方库的方法，甚至是一些内置的方法，提供了可选参数，这个参数会让你传递 *上下文对象* 来绑定到回调函数 `this` 上：
+
+```js
+function foo (ele) {
+  console.log(ele, this.id);
+}
+
+var obj = {
+  id: 'awesome'
+};
+
+[1, 2, 3].forEach(foo, obj); // 1 "awesome" 2 "awesome" 3 "awesome"
+```
+
+从本质上来说，这些方法都采用了显示绑定的规则，即使用 `call` 和 `apply` 内置方法来帮你避免一些麻烦。
+
+## `new` 绑定(`new` Binding)
