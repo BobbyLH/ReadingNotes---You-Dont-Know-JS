@@ -282,3 +282,34 @@ var obj = {
 从本质上来说，这些方法都采用了显示绑定的规则，即使用 `call` 和 `apply` 内置方法来帮你避免一些麻烦。
 
 ## `new` 绑定(`new` Binding)
+第四个，也是最后一个 `this` 的绑定规则，需要我们重新思考JS中的函数和对象，以及关于它们常见的误区。
+
+在传统的面向对象的语言中，通常使用关键字 `new` 来实例化一个类，这个关键字在JS中也同样存在。但JS中使用关键字 `new` 虽然看上去跟面向对象的语言一样，好像都实例化了一个类，但这只是一个假象。
+
+首先，JS中所谓的 *构造器(constructor)* 只是一个函数，在其前面使用了关键字 `new` 来调用它而已。它并非一个类，也不是实例化这个类，它甚至都不是一个特殊的函数 —— 除了使用 `new` 来 *劫持(hijacked)* 它的调用，它本质上和普通的函数没什么两样。
+
+比如，内置的 `Number(…)` 构造函数，在ES5的说明文档里，对其有清晰的定义：
+> 15.7.2 The Number Constructor
+> 
+> When Number is called as part of a new expression it is a constructor: it initialises the newly created object.
+
+JS中并没有所谓的 *构造器函数(constructor functions)*，只有 *函数的构造调用(construction calls of functions)*。
+
+当函数前使用了 `new` 关键字时，发生了如下的事情：
+1. 凭空创造了新对象，并将其关联到 *原型(prototype)* 上；
+2. 这个新对象被绑定为这个函数中的 `this` 的 *上下文对象*；
+3. 除非函数手动的返回一个对象，否则就这个新创建的对象会被返回。
+
+```js
+function foo (a) {
+  this.a = a;
+}
+
+var bar = new foo(a);
+
+console.log(bar.a); // 2
+```
+
+`new` 是函数调用时能够绑定 `this` 的最后一种方式，我们称其为 *new 绑定*。
+
+## 一切都井然有序(Everything In Order)
