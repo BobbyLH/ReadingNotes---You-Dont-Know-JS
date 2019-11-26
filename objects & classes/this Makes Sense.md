@@ -313,3 +313,58 @@ console.log(bar.a); // 2
 `new` 是函数调用时能够绑定 `this` 的最后一种方式，我们称其为 *new 绑定*。
 
 ## 一切都井然有序(Everything In Order)
+如果只有一种 `this` 绑定的规则，那一切尽在不言中。而现实是我们往往会面临多种绑定规则一起出现，这时候次序，或者说权重就显得很重要了。
+
+一个显而易见的情况是，*默认绑定规则(default binding)* 肯定是优先级最低的情况，因此先比较 *隐式绑定(implicit binding)* 和 *显示绑定(explicit binding)*：
+
+```js
+function foo () {
+  console.log(this.a);
+}
+
+var obj1 = {
+  a: 3,
+  foo
+};
+
+var obj2 = {
+  a: 2,
+  foo
+};
+
+obj1.foo(); // 3
+obj2.foo(); // 2
+
+obj1.foo.call(obj2); // 2
+obj2.foo.call(obj1); // 3
+```
+
+👆很显然，从 `obj1.foo.call(obj2);` 会输出 `3` 的结果来看，*显示绑定* 的优先级高于 *隐式绑定*。
+
+👇接下去是 *隐式绑定(implicit binding)* 和 *new 绑定(new binding)*：
+
+```js
+function foo (num) {
+  this.a = num;
+}
+
+var obj1 = {
+  foo
+};
+
+var obj2 = {};
+
+obj1.foo(2);
+console.log(obj1.a); // 2
+
+obj1.foo.call(obj2, 3);
+console.log(obj2.a); // 3
+
+var bar = new obj1.foo(4);
+console.log(obj1.a); // 2
+console.log(bar.a); // 4
+```
+
+很显然，`bar.a` 的值是 `4`，因此 *new 绑定* 优先级高于 *隐式绑定*。
+
+**Note:**
