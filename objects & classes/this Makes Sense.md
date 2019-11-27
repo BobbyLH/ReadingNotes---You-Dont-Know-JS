@@ -367,4 +367,85 @@ console.log(bar.a); // 4
 
 很显然，`bar.a` 的值是 `4`，因此 *new 绑定* 优先级高于 *隐式绑定*。
 
-**Note:**
+**Note:** `new` 和 `call / apply` 不能够同时使用，因此 `new foo.call(obj1);` 是不能被允许的。为了能够测试 *new 绑定* 和 *显示绑定* 的优先级，我们可以借用 *硬绑定* 来实现。
+
+一般我们用 `Function.prototype.bind(…)` 来对某个函数进行一层 *包裹(wrapper)*，这个包裹会忽视掉其他的 `this` 绑定规则，而使用我们手动提供的 *上下文对象* 来绑定到 `this` 上。
+
+因此，*显示绑定* 优先于 *new 绑定* 是一个很轻易就被推断出来的结论，但实际上并非如此：
+
+```js
+function foo (num) {
+  this.a = num;
+}
+
+var obj1 = {};
+ 
+var bar = foo.bind(obj1);
+
+bar(2);
+console.log(obj1.a); // 2
+
+var baz = new bar(3);
+
+console.log(obj1.a); // 2
+console.log(baz.a); // 3
+```
+
+👆 `bar` 是作为函数 `foo` 硬绑定其 `this` 到对象 `obj1` 的结果，但是 `new bar(3);` 并没有直接改变 `obj1.a` 的值，而是创建了一个新的对象(`baz`)，并将函数 `foo` 的 `this` 绑定到这个对象上，从而得到 `baz.a` 的结果是 `3`。
+
+但如果回顾之前我们写的一个简单的模拟 *硬绑定* 的方法，你会惊奇的发现，`new` 好像没有办法重写 *硬绑定* 的规则：
+```js
+function simpleBind (fn, ctx) {
+  return function () {
+    return fn.apply(ctx, arguments);
+  }
+}
+
+function foo (num) {
+  this.a = num;
+}
+
+var obj1 = {};
+ 
+var bar = simpleBind(foo, obj1);
+
+bar(2);
+console.log(obj1.a); // 2
+
+var baz = new bar(3);
+
+console.log(obj1.a); // 3
+console.log(baz.a); // undefined
+```
+
+但实际上，在ES5中出现的内置的方法 `Function.prototype.bind(…)` 是更完善的，比如拿 MDN 中对其进行 [polyfill](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_objects/Function/bind) 的代码为例(能够使用 `new` 关键字的版本)：
+```js
+// It does work with `new funcA.bind(thisArg, args)`
+if (!Function.prototype.bind) {
+  var ArrayPrototypeSlice = Array.prototype.slice;
+  Function.prototype.bind = function (oThis) {
+    if (typeof this !== 'function') {
+      throw new TypeError('Function.prototype.bind - ' + 'what is trying to be bound is not callable');
+    }
+
+    var aArgs = ArrayPrototypeSlice.call(arguments, 1),
+    aArgsLength = aArgs.length,
+    fToBind = this,
+    fNOP = function () {},
+    fBound = function () {
+      aArgs.length = aArgsLength;
+      aArgs.push.apply(aArgs, arguments);
+      return fToBind.apply(fNOP.prototype.isPrototypeOf(this) ? this : oThis, aArgs);
+    };
+
+    if (this.prototype) {
+      fNOP.prototype = this.prototype;
+    }
+    fBound.prototype = new fNOP();
+
+    return fBound;
+  };
+}
+```
+
+**Note:** 
