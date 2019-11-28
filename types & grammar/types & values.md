@@ -132,9 +132,9 @@
 6. RegExp
 
 ### Array
-- **delete** - 该方法会删除slot值，但是依然保留slot，因此会创建出松散(sparse)的数组
+- **delete** - 该方法会删除slot值，但是依然保留slot，因此会创建出 *松散(sparse)* 的数组
   ```javascript
-  var a = [1,2,3];
+  var a = [1, 2, 3];
   delete a[2];
 
   a.length; // 3
@@ -146,8 +146,8 @@
   document.querySelectorAll('div');
   ```
 - 类数组转换为数组
-  - Array.prototype.slice.call()
-  - Array.from()
+  - `Array.prototype.slice.call(…)`
+  - `Array.from(…)`
 
 ----
 

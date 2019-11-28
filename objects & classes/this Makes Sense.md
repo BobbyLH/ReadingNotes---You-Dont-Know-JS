@@ -433,7 +433,7 @@ if (!Function.prototype.bind) {
     fToBind = this,
     fNOP = function () {},
     fBound = function () {
-      aArgs.length = aArgsLength;
+      aArgs.length = aArgsLength; // reset to default base arguments
       aArgs.push.apply(aArgs, arguments);
       return fToBind.apply(fNOP.prototype.isPrototypeOf(this) ? this : oThis, aArgs);
     };
@@ -448,4 +448,35 @@ if (!Function.prototype.bind) {
 }
 ```
 
-**Note:** 
+**Note:** 👆MDN提供的 `bind(…)` 的 polyfill 和ES5中内置的 `bind(…)` 方法在硬绑定再后调用 `new`，有些地方有区别。因为 polyfill 会创建一个具有 `prototype` 属性的函数 `fBound` 来作为硬绑定的返回函数，而内置的方法返回的函数则没有。
+> The partial implementation creates functions that have a prototype property. (Proper bound functions have none.)
+
+👇这段代码是能够使用 `new` 关键字的核心：
+```js
+fNOP.prototype.isPrototypeOf(this) ? this : oThis
+
+// 以及
+
+if (this.prototype) {
+  fNOP.prototype = this.prototype;
+}
+fBound.prototype = new fNOP();
+```
+
+其中，`fNOP` 的 *原型对象(prototype)* 如果和该函数 *调用点* 时绑定的 *上下文对象* 一致时(该场景等于使用关键字 `new` 来调用这个函数)，硬绑定所返回的函数的 `this` 指向则会使用这个新的 `this` 作为 *上下文对象*，而非之前预设且保存在变量 `oThis` 中的 *上下文对象*。
+
+另一个 `bind(…)` 所具备的能力则是将第一次进行硬绑定过程中，除开第一个参数(即绑定上下文的 `oThis`)的剩余参数 `aArgs`，作为下次调用这个硬绑定函数的默认参数传递进去，从技术角度将，这个特性叫做 *部分应用(partial application)*，也称为 *柯里化(currying)*：
+
+```js
+function foo (p1, p2) {
+  this.val = p1 + p2;
+}
+
+var bar = foo.bind(null, 'your ');
+
+var baz = new bar('name');
+
+console.log(baz.val); // 'your name'
+```
+
+### `this` 的决定时刻(Determining `this`)
