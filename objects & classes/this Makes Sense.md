@@ -482,3 +482,57 @@ console.log(baz.val); // 'your name'
 ```
 
 ### `this` 的决定时刻(Determining `this`)
+总结一下绑定 `this` 的规则，从上往下代表优先级的从高到底：
+1. 若函数通过 `new` 关键字调用，则 `this` 指向新创建的这个对象：
+  `var bar = new foo();`
+
+2. 函数调用 `apply` 或 `call` 来显示的绑定 `this`：
+  `var bar = foo.call(obj2);`
+
+3. 函数的 *调用点* 包含了某个 *上下文对象* 来隐式的绑定 `this`：
+  `var bar = obj1.foo();`
+
+4. 上述情况都不满足，则使用默认绑定规则 —— *严格模式* 下 `this` 是 `undefined`，否则 `this` 指向全局对象：
+  `var bar = foo();`
+
+👆这些基本是所有的 `this` 绑定规则。
+
+## 绑定规则之外(Binding Exceptions)
+凡事都有例外，`this` 的绑定也不能幸免。
+
+### 被忽略的`this`(Ignored `this`)
+如果你传入 `null` 或 `undefined` 作为 `call`、`apply` 或 `bind` 的第一个参数，`null` 或 `undefined` 会被忽略，取而代之的是默认绑定规则：
+
+```js
+function foo () {
+  console.log(this.a);
+}
+
+var a = 2;
+
+foo.call(null); // 2
+```
+
+你可能会问，为什么要用 `null` 或 `undefined` 作为 `this` 的 *上下文对象*？因为一般我们可以使用 `apply` 第二个参数是数组的特性，把一个拥有很多参数(形参)的函数的参数(实参)，放进一个数组中(便于管理)，然后使用 `apply` 来调用这个函数；或者使用 `bind` 的柯里化特性，预先保留一些参数，以便在后面使用的时候自动带上这些参数：
+
+```js
+function foo (a, b, c) {
+  console.log(a + b + c);
+}
+
+foo.apply(null, [1, 2, 3]); // 6
+
+var bar = foo.bind(null, 1, 2);
+
+bar(3); // 6
+
+bar(4); // 7
+```
+
+`apply` 和 `bind` 都需要第一个参数作为指定 `this` 的 *上下文对象*，如果你调用的函数根本不关心 `this` 的指向，那么 `null` 就是一个很好的占位符。
+
+**Note:** 虽然 ES6 中已经有 `...` 扩展运算符，能够解构数组，但是 `bind` 方法自带的 *柯里化(currying)* 特性还未有替代物，因此这种情况仍然需要关注。
+
+最危险的情况往往是在你未曾预料的时候发生，就比如你是用了一个第三方的开源的库，你不清楚它的具体实现细节而贸然将它提供的某个方法，用 `null` 或 `undefined` 作为 `this` 的 *上下文对象*，那有可能会导致一些很难追踪到的bug。
+
+#### 安全的`this`(Safer `this`)
