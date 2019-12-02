@@ -536,3 +536,41 @@ bar(4); // 7
 最危险的情况往往是在你未曾预料的时候发生，就比如你是用了一个第三方的开源的库，你不清楚它的具体实现细节而贸然将它提供的某个方法，用 `null` 或 `undefined` 作为 `this` 的 *上下文对象*，那有可能会导致一些很难追踪到的bug。
 
 #### 安全的`this`(Safer `this`)
+创建一个没有任何委托，且完全是一个空对象，作为 `this` 绑定的 *隔离带(DMZ de-militarized zone)*，是一个常见的确保不会产生副作用(比如 `this` 根据默认规则绑定到全局对象上，而后对全局对象产生污染等意外的结果)的办法之一。
+
+用 `ø` 来指代这个空对象更具语义化，使用 `Object.create(null)` 创建出一个没有代理 `Object.prototype` 的空对象：
+
+```js
+function foo (a, b, c) {
+  console.log(a + b + c);
+}
+
+var ø = Object.create(null);
+
+foo.apply(ø, [1, 2, 3]); // 6
+
+var bar = foo.bind(ø, 1, 2);
+
+bar(3); // 6
+
+bar(4); // 7
+```
+
+### 间接绑定了`this`(Indirection)
+另外一个需要警惕的情况是在赋值的时候发生的 *间接引用(indirect references)*，在这种情形下，一旦调用了该函数引用，执行的是默认的绑定规则：
+
+```js
+function foo () {
+  console.log(this.a);
+}
+
+var a = 2;
+var o = { a: 3 };
+var p = { a: 4, foo };
+
+(o.foo = p.foo)(); // 2
+```
+
+`o.foo = p.foo` 仅仅是对底层函数对象的引用，真正执行的 *调用点* 是 `foo()` 而不是 `p.foo()` 或 `o.foo()`，因此按照规则，默认绑定会被执行。
+
+### 软绑定(Softening Binding)
