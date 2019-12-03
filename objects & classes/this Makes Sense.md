@@ -574,3 +574,51 @@ var p = { a: 4, foo };
 `o.foo = p.foo` 仅仅是对底层函数对象的引用，真正执行的 *调用点* 是 `foo()` 而不是 `p.foo()` 或 `o.foo()`，因此按照规则，默认绑定会被执行。
 
 ### 软绑定(Softening Binding)
+虽然使用硬绑定能够解决 *不经意间丢失 `this` 绑定而导致默认绑定规则生效* 的情况，但硬绑定让函数失去了灵活度 —— 除非你使用 `new` 关键字，否则任何的隐式绑定，甚至是显示绑定规则都没效果。
+
+*软绑定* 是解决这种问题的一个办法：
+
+```js
+if (!Function.prototype.softBind) {
+  Function.prototype.softBind = function (presetCtx) {
+    var fn = this,
+    curried = [].slice.call(arguments, 1),
+    bound = function bound () {
+      return fn.apply(
+        (!this || (typeof window !== 'undefined' && this === window) || (typeof global !== 'undefined' && this === global))
+          ? presetCtx
+          : this,
+        curried.concat.apply(curried, arguments)
+      );
+    };
+    bound.prototype = Object.create(fn.prototype);
+
+    return bound;
+  }
+}
+```
+
+除了检测 *调用点* 的 `this` 是否启用的是默认绑定规则之外，`softBind` 基本和 ES5 中的 `bind` 方法类似。其核心就是预设一个 `presetCtx` 作为替代默认绑定规则的 *上下文对象*，而后返回的函数判断其 *调用点* 的 `this` 指向，只要不是全局对象，那么就应用当前的 `this` 指向，否则将 `this` 绑定到预设的 *上下文对象* 上。
+
+```js
+function foo (a, b, c) {
+  console.log(a + b + this.c);
+}
+
+var bar = foo.softBind(obj1, 1, 2);
+
+var c = 3;
+var obj1 = { c: 4 };
+var obj2 = { c: 5, bar };
+var obj3 = { c: 6 };
+
+obj2.bar(); // 8
+
+bar.call(obj3); // 9
+
+bar(); // 7
+```
+
+可以看到，`bar();` 控制台打印的值是 `7`，即为 `1+2+4`，而其他的 `obj2.bar();` 和 `bar.call(obj3);` 都应用上了隐式绑定规则和显示绑定规则，唯一不生效的是默认绑定规则。
+
+## 词法`this`(Lexical `this`)
