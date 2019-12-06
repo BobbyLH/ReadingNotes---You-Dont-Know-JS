@@ -633,15 +633,58 @@ function foo () {
   }
 }
 
-var obj1 = {
+const obj1 = {
   a: 2
 };
 
-var obj2 = {
+const obj2 = {
   a: 3
 };
 
-var bar = foo.call(obj1);
+const bar = foo.call(obj1);
 
 bar.call(obj2); // 2
 ```
+
+与之类似的做法就是使用 *词法作用域* 来绕过 `this` 的问题：
+```js
+function foo () {
+  const self = this;
+  return function () {
+    console.log(self.a);
+  }
+}
+
+const obj1 = {
+  a: 2
+};
+
+const obj2 = {
+  a: 3
+};
+
+const bar = foo.call(obj1);
+
+bar.call(obj2); // 2
+```
+
+箭头函数的 `this` 绑定和普通函数的有很大区别，它要求你更为熟悉词法作用域。按照作者的观点，如果你发现自己经常使用 *箭头函数* 或者 *词法作用域* 来解决 `this` 的问题时，你应该考虑：
+1. 彻底放弃使用 `this`，用 词法作用域 就好了；
+2. 拥抱 `this`，完全的理解其机制并熟练使用它解决问题，避免使用 `self = this` 或者 箭头函数 来绕开问题。
+
+千万别在同一个函数中混用 词法作用域 和 `this`，这不仅会造成代码难以维护，而且也会让你自己的工作举步维艰。
+
+## 回顾(Review)
+普通函数的 `this` 绑定规则是基于 调用点(call-site) 的，安装从上往下的优先级依次排序：
+
+1. `new` 关键字构造新对象；
+
+2. `call`、`apply`、`bind` 显示绑定；
+
+3. 包含 **上下文对象** 的隐式绑定；
+
+4. 默认绑定规则，在 严格模式`strict mode` 下绑定到 `undefined`，非严格模式绑定到全局对象上。
+
+小心各种 `this` 丢失，而后使用默认绑定规则的情况。在不需要指定 `this` 绑定的前提下，`ø = Object.create(null)` 是一个很好的占位符避免绑定到全局对象上造成全局污染。
+
+ES6 的箭头函数和 词法作用域 能够绕开 `this` 绑定的困扰，在某些情况下，这也是不是办法的办法。
