@@ -96,3 +96,78 @@ str_primitive.charAt(3); // "i"
 `Error` 对象很少显示的在代码中创建，一般在程序运行出错时会自动创建。
 
 ## 内容(Contents)
+组成对象的各种类型的值，都被保存在一个称为 属性(properties) 的地方中。虽然看似这些值都应该是存储在这个对象里，但在实际操作的时候并非都如此 —— 有时候属性保存的只是一个 指针(pointer)，这个指针指向的才是实际值存储的地方。
+
+```js
+var obj = {
+  a: 2
+}
+
+obj.a; // 2
+
+obj['a']; // 2
+```
+
+点运算符 `.` 和 中括号操作符 `[]` 都能从对象中获取属性 `a` 保存的实际的值。在某些情况下，它们是可互换的。它们的区别之一是 `.` 的后面只能接受合法的 标识符(Identifier)，而 `[]` 能容纳一切符合 UTF-8/unicode 字符集范畴内的字符串：
+
+```js
+var obj = {
+  'property-a': 56
+};
+
+obj['property-a']; // 56
+
+// obj.property-a; // ReferenceError
+```
+
+另外一个区别是 `[]` 能够接受一个变量来动态的改变要访问的属性：
+
+```js
+var idx = 'property_a';
+var obj = {
+  property_a: 2,
+  property_b: 3
+};
+
+obj[idx]; // 2
+
+idx = 'property_b';
+
+obj[idx]; // 3
+```
+
+你还能利用 ES6 模板字符串的功能更优雅完成👆上述操作：
+```js
+var idx = 'a';
+var obj = {
+  property_a: 2,
+  property_b: 3
+};
+
+obj[`property_${idx}`]; // 2
+
+idx = 'b';
+
+obj[`property_${idx}`]; // 3
+```
+
+在对象中，属性名的类型是 `string`，就算你用了别的类型的值来作为属性名，最终也会被强行转换成字符串，哪怕是使用 `number `类型的值，也无法避免。这一点千万别合数组搞混淆了：
+
+```js
+var obj = {};
+
+obj[true] = 'foo';
+obj[3] = 'bar';
+obj[obj] = 'baz';
+
+obj[true]; // 'foo'
+obj['true']; // 'foo'
+
+obj[3]; // 'bar'
+obj['3']; // 'bar'
+
+obj[obj]; // 'baz'
+obj['[object Object]']; // 'baz'
+```
+
+### 计算属性名(Computed Property Name)
