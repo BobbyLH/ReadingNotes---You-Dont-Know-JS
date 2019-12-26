@@ -171,3 +171,42 @@ obj['[object Object]']; // 'baz'
 ```
 
 ### 计算属性名(Computed Property Name)
+针对获取对象的属性值，我们能利用 `[]` 传入一个变量，来动态的改变属性名，从而动态的获取不同的属性值。那如果想要动态的描述一个对象的属性名呢？ES6 新增了一个叫做 *计算属性名(computed property names)* 的新特性，同样使用了中括号 `[]` 运算符，将其放在对象键名的位置上：
+
+```js
+var prefix = 'prefix_';
+
+var obj = {
+  [prefix + 'bar']: 'hello',
+  [prefix + 'baz']: 'world'
+};
+
+obj[`${prefix}bar`]; // "hello"
+obj[`${prefix}baz`]; // "world"
+```
+
+ES6 中新增的 `Symbol` 配合使用计算属性名，是一种新用法 —— 简单来讲，`Symbol` 是一个新增加的原始类型(从技术角度说依然是 `string`)，并且它是一个唯一的不重复的值，因此常被用于作为对象的私有属性名，如此一来保证不会有其他的属性覆盖掉私有属性：
+```js
+const private_property = Symbol('private');
+
+var obj = {
+  [private_property]: 'property1',
+  [Symbol('private')]: 'property2',
+  [`Symbol('private')`]: 'property3',
+  ['private']: 'property4'
+};
+
+
+obj[private_property]; // "property1"
+
+obj[`Symbol('private')`]; // "property3"
+
+obj[Symbol('private')]; // undefined
+
+obj['private']; // "property4"
+```
+
+![avatar](./assets/object_computed_property_name.png)
+
+### 属性 vs. 方法(Property vs. Method)
+有些程序员喜欢纠结当对象的一个属性值是函数时，应该称它为方法。若要区分 *方法获取(method access)* 和 *属性获取(property access)*，听上去总感觉怪怪的 —— 特别是当JS的规范也做了同样的区分，interestingly。
