@@ -210,3 +210,45 @@ obj['private']; // "property4"
 
 ### 属性 vs. 方法(Property vs. Method)
 有些程序员喜欢纠结当对象的一个属性值是函数时，应该称它为方法。若要区分 *方法获取(method access)* 和 *属性获取(property access)*，听上去总感觉怪怪的 —— 特别是当JS的规范也做了同样的区分，interestingly。
+
+从技术角度来看，函数不应该也不可能 “属于(belong)” 某个对象，因此用 “方法(method)” 来描述从属性中获取的函数有点言过其实了 —— 别拿 `this` 来说事儿，它只不过是在代码运行的时候(run-time)，根据调用点(call-site)来动态绑定其上下文罢了，它和对象本身并没有直接联系，顶多算作间接关联。
+
+因此，每次你通过对象的属性获取属性值的时候，请记住，无论你得到什么值，那都是 **属性获取(property access)**。
+
+```js
+function foo () {
+  console.log('foo');
+}
+
+var someFoo = foo;
+
+var obj = {
+  someFoo: foo
+};
+
+foo; // foo() { console.log( "foo" ); }
+someFoo; // foo() { console.log( "foo" ); }
+obj.someFoo; // foo() { console.log( "foo" ); }
+```
+
+👆无论是那种方法获取函数 `foo`，实际上都是指向同一块内存地址；若在函数 `foo` 里面使用了关键字 `this`，`obj.someFoo` 会使用隐式的绑定规则，将 `this` 的上下文绑定到 `obj` 上 —— 但即便如此，也不能说这个 `obj.someFoo` 就是一个方法。
+
+有人可能会据此争论：函数是否是方法，不是在它定义的时候决定的，而是在它调用(运行)的时候决定的。这好像是一个无休止的争论。最安全的说法应该是：目前在JS中，“函数(function)” 和 “方法(method)” 两个概念是可以互换的。
+
+**Note**：ES6 中新增了 `super` 关键字用于在类 `class` 中使用。看上去 `super` 和 `this` 好像有本质的不同 —— 它是静态绑定而非动态绑定上下文，因此这为在类中定义的函数是 *方法* 提供了有利证据 —— 但实际上这只是语法上的微妙区别罢了。
+
+即便是你在对象的属性上声明了一个函数表达式，那也不会神奇的让这个函数属于这个对象，说到底依然是对同一个函数对象的内存地址的引用：
+```js
+var obj = {
+  foo: function () {
+    console.log('foo');
+  }
+}
+
+var someFoo = obj.foo;
+
+someFoo; // () { console.log( "foo" ); }
+obj.foo; // () { console.log( "foo" ); }
+```
+
+### 数组(Array)
