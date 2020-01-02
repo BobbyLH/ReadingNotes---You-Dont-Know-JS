@@ -294,4 +294,53 @@ arr[3]; // "Tom"
 
 虽然你可以像操作普通对象一样使用数组，但最好别这么做！数组有经过了优化的行为和规范，对于数组而言，属性名应该统一使用数字化的索引。而若想要键值对的数据结构，选择普通的对象即可。
 
-### 对象的复制(Duplicating Objects)
+### 对象的拷贝(Duplicating Objects)
+在JS中想要拷贝一个对象，目前来看并没有内置的 `copy()` 方法，只能自己手动实现一个，但这有些复杂，原因除了实现的复杂度之外，还在于拷贝算法的选择方向上：
+
+```js
+function someFn () {};
+
+var someObj = { c: true };
+
+var someArr = [];
+
+var myObj = {
+  a: 2,
+  b: someFn,
+  c: someArr,
+  d: someObj
+};
+
+someArr.push(someObj, myObj);
+```
+
+👆如果我们要拷贝 `myObj` 这个对象，要如何下手？
+
+回答这个问题前，我们需要弄清楚 *浅拷贝(shallow copy)* 和 *深拷贝(deep copy)* 的区别。如果进行 *浅拷贝*，除了 `myObj.a` 是基本数据类型需要复制之外，其余的属性(`myObj.b`、`myObj.c`、`myObj.d`)只需要指向它的内存地址即可；如果是 *深拷贝* 则所有的属性都要复制。但 `myObj.c` 中包含了 `myObj` 和 `someObj`，出现了 *循环引用(circular reference)*，对其进行复制就会陷入无限的循环中 —— `someArr` 里面有 `myObj`，`myObj` 里面有 `someArr`……
+
+那到底是一旦发现循环引用，就打断无限的循环，仅仅保留循环引用的地址，还是发现有循环引用后直接报错？亦或保留两者，采取一个折中的办法？
+
+并且，对于 `someFn` 函数的拷贝，虽然有 `toString()` 的内置方法可以 *序列化(serialization)* 函数的源码，而后进行复制。但是在不同的JS宿主环境中，对于这个原生方法的实现有诸多的差异，这也是需要考虑的一点。
+
+很长一段时间内，关于对象的深拷贝都没有一个业界统一的标准。许多JS框架都有自己的一套处理办法。一个比较流行的处理方式是使用 **JSON-safe** —— 将对象序列化成 JSON字符串，而后再反序列化回到对象，利用JSON的API能够轻易的实现：
+
+```js
+var newObj = JSON.parse(JSON.stringify(myObj));
+```
+
+👆这必须要求你保证你的对象能够安全的转换成JSON，在某些情况下会显得很麻烦，甚至不能满足需求。
+
+某些情况下，*浅拷贝* 有可能就够了。ES6 新增的 `Object.assign(…)` 就是一个标准的浅拷贝的方法。它第一个参数接收一个拷贝的目标对象，后面的参数接受任意个被拷贝的对象，这些对象可枚举的(enumerable)、自有的(owned keys)，原始数据类型会被复制到目标对象，而复杂数据类型只复制引用的地址，并最终返回目标对象对象：
+
+```js
+var newObj = Object.assign({}, myObj);
+
+newObj.a; // 2
+newObj.b === someFn; // true
+newObj.c === someArr; // true
+newObj.d === someObj; // true
+```
+
+**Note**：由于 `Object.assign()` 的拷贝过程是使用了 `=` 运算符，因此一些 属性的特性(property characteristics，可由 `Object.defineProperty()` 定义) 比如 `writable`，不会被复制。
+
+### 属性描述符(Property Descriptors)
