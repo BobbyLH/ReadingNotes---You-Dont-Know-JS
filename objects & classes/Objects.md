@@ -344,3 +344,173 @@ newObj.d === someObj; // true
 **Note**：由于 `Object.assign()` 的拷贝过程是使用了 `=` 运算符，因此一些 属性的特性(property characteristics，可由 `Object.defineProperty()` 定义) 比如 `writable`，不会被复制。
 
 ### 属性描述符(Property Descriptors)
+在ES5之前，JS语言没办法直接控制对象属性的某些特性，比如是否可读。而后在ES5规范中，所有的属性都能够用 属性描述符(Property Descriptors) 进行更为详细的描述：
+
+```js
+var obj = {
+  a: 2
+};
+
+Object.getOwnPropertyDescriptor(obj, 'a');
+// {
+//   value: 2,
+//   writable: true,
+//   enumerable: true,
+//   configurable: true
+// }
+```
+
+👆正如你所见，属性 `a` 的描述符除了将其属性值(`2`)保存在 `value` 中之外，还有另外三个特性分别是 `writable`、`enumerable` 和 `configurable`。
+
+默认创建的对象属性，其 `writable`、`enumerable` 和 `configurable` 都为 `true`。如果想要在创建属性的时候控制这些特性，可以使用 `Object.defineProperty(…)`；如果在创建后想要修改某个特性，只要 `configurable` 为 `true`，也能用 `Object.defineProperty(…)` 这个方法：
+
+```js
+var obj = {};
+
+Object.defineProperty(obj, 'a', {
+  value: 2,
+  writable: true,
+  enumerable: true,
+  configurable: true
+});
+
+obj.a; // 2
+
+Object.defineProperty(obj, 'a', {
+  value: 22,
+  writable: false,
+  enumerable: true,
+  configurable: true
+});
+
+obj.a; // 22
+Object.getOwnPropertyDescriptor(obj, 'a');
+// {
+//   value: 22,
+//   writable: false,
+//   enumerable: true,
+//   configurable: true
+// }
+```
+
+#### 可写(Writable)
+这个特性用于控制是否能改变属性值：
+
+```js
+var obj = {};
+
+Object.defineProperty(obj, 'a', {
+  value: 2,
+  writable: false,
+  enumerable: true,
+  configurable: true
+});
+
+obj.a = 3;
+
+obj.a; // 2
+```
+
+👆当 `writable` 设为 `false` 后，`obj.a = 3;` 没能改变 `obj.a` 的属性值。如果在严格模式中，还会报错：
+
+```js
+(function () {
+'use strict';
+var obj = {};
+
+Object.defineProperty(obj, 'a', {
+  value: 2,
+  writable: false,
+  enumerable: true,
+  configurable: true
+});
+
+obj.a = 3;
+})()
+// TypeError
+```
+
+![avatar](./assets/object_writable.png)
+
+**Note**：简单来讲，`writable: false` 实际上相当于定义了一个 no-op setter，当你使用赋值运算符 `=` 时，no-op setter 会抛出一个 `TypeError` 的错误。
+
+#### 可配置(Configurable)
+只要属性目前的 `configurable` 为 `true`，就能够任意修改属性描述符的值：
+
+```js
+var obj = {
+  a: 2
+};
+obj.a = 3;
+obj.a; // 3
+
+Object.defineProperty(obj, 'a', {
+  value: 4,
+  writable: true,
+  enumerable: true,
+  configurable: false
+});
+obj.a; // 4
+obj.a = 5;
+obj.a; // 5
+
+Object.defineProperty(obj, 'a', {
+  value: 6,
+  writable: true,
+  enumerable: true,
+  configurable: false
+});
+obj.a; // 6
+
+Object.defineProperty(obj, 'a', {
+  value: 7,
+  writable: false,
+  enumerable: true,
+  configurable: false
+});
+obj.a; // 7
+obj.a = 8;
+obj.a; // 7
+
+Object.defineProperty(obj, 'a', {
+  value: 9,
+  writable: true,
+  enumerable: true,
+  configurable: true
+}); // TypeError
+```
+
+无论是否处于严格模式中，最后想要修改描述符 `configurable` 的行为都会报错。这也说明了当设置了 `configurable` 为 `false` 后，没办法撤回 —— 这是一条不归路。
+
+**Note**：需要注意的是，虽然 `configurable` 为 `false`，但 `writable` 可以从 `true` 变为 `false`，却不能从 `false` 变为 `true`。`configurable` 为 `false` 且 `writable` 为 `true` 的情况下，也依然能够修改其 `value` 的值。
+
+除此之外，当 `configurable` 为 `false` 时，`delete` 操作符也无法移除该属性：
+
+```js
+var obj = {
+  a: 2
+};
+
+obj.a; // 2
+delete obj.a; // true
+obj.a; // undefined
+
+Object.defineProperty(obj, 'a', {
+  value: 3,
+  writable: true,
+  enumerable: true,
+  configurable: false
+});
+
+obj.a; // 3
+delete obj.a; // false
+obj.a; // 3
+```
+
+`delete` 操作符仅能用于删除能被删除的对象属性。即便是它能够将属性的引用移除，从而让JS进行垃圾回收，释放内存；但千万别将它视为是一个释放内存的工具 —— 它就是一个对象属性的移除操作符而已，仅此而已。
+
+#### 可枚举(Enumerable)
+这个特性主要是用于控制属性在一些循环遍历中，比如 `for in` 循环，是否能被枚举出来。如果你想让某个属性在遍历中不会被枚举到，那就将 `enumerable` 设为 `false` 即可。
+
+
+### 不可变的(Immutability)
