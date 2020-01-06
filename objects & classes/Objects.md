@@ -514,3 +514,48 @@ obj.a; // 3
 
 
 ### 不可变的(Immutability)
+有时候会遇到 *对象或者对象的属性是不能被改变(无论是有意还是无意)*，这样的需求，ES5规范中通过一些巧妙的方式能够支持这样的需求。但值得一提的是，这些方式都只能影响对象自身或者是它们自有的属性，如果属性是对其他对象、数组、函数等复杂类型的引用时，它们不会受到影响，依然是可变的(mutable)。
+
+**Note**：一个对象深度的不可变的需求确实不常见，如果你设计的程序让你一定要 *密封(seal)* 或者 *冻结(freeze)* 你某个对象，最好的方式是回过头仔细看看是否自己的代码设计的 *鲁棒性(robust)* 不够导致一定要避免潜在的对象改变的风险？
+
+
+#### 对象常量(Object Constant)
+通过“组合拳” —— `writable: false` 和 `configurable: false`，你能创建一个不能被改变、重定义、删除的常量作为对象的属性：
+
+```js
+var obj = {};
+
+Object.defineProperty(obj, 'Immutable_Number', {
+  value: 2,
+  configurable: false,
+  writable: false
+});
+```
+
+#### 阻止扩展(Prevent Extensions)
+如果要阻止对象的扩展(即添加新的属性)，可以使用 `Object.preventExtensions(…)`：
+
+```js
+var obj = {
+  a: 2
+};
+
+Object.preventExtensions(obj);
+
+obj.b = 3;
+obj.b; // undefined
+```
+
+在严格模式下，上述👆代码会抛出 `TypeError`。
+
+#### 密封(Seal)
+`Object.seal(…)` 创建一个“被密封的对象” —— 即 `Object.preventExtensions(…)` 和 `configurable: false` 都作用于这个对象上。这意味着你不仅不能添加新的属性，也不能重新定义或者删除已有的属性(当然你依然能够修改它的属性值)。
+
+#### 冰冻(Freeze)
+`Object.freeze(…)` 创建一个“被冰冻的对象” —— 它的功能覆盖了 `Object.seal(…)`，并且还增加了 `writable: false`，因此它的属性值也是不能被改变的。
+
+这是目前为止最高等级的 不可变(immutablility)，它能阻止任何对于对象以及它自身属性的修改，当然如果其属性是复杂类型的引用，则不受影响。
+
+当然，你能够在这个对象上递归所有的引用属性，然后对它们使用 `Object.freeze(…)`，但需要注意的是，这种做法很有可能会影响到其他正常的对象。
+
+### `[[Get]]`
