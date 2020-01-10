@@ -585,3 +585,21 @@ obj.b; // undefined
 虽然 `obj.a` 和 `obj.b` 都返回了 `undefined`，但显然 `obj.b` 在看不见的地方做了更多的事情。想要区别这两者到底是属性值就是 `undefined` 还是 `[[Get]]` 最终没有找到相应的值返回 `undefined`，请往下看。
 
 ### `[[Put]]`
+既然都有 `[[Get]]` 运算来获取对象属性的值，与此对应也应该有 `[[Put]]` 运算来为对象的属性赋值。
+
+当为一个对象的属性赋值的时候，并不是只是简单的调用 `[[Put]]` 运算去设置或者创建对象的属性，无论对象有没有这个属性，其具体的实现会受到各种因素的影响。
+
+如果属性已经存在，默认的 `[[Put]]` 算法大致会完成以下的步骤：
+
+1. 若这个属性是一个 [**存取描述符(accessor-descriptor)**](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty)，则直接调用 setter 方法；
+
+2. 若这个属性的属性描述符中的 `writable` 为 `false`，在严格模式下会抛出 `TypeError`，在非严格模式下无法成功设置；
+
+3. 上述情况都不满足，则正常的设置属性值。
+
+如果属性不存在，则会有更多复杂的细节去完成赋值的动作，会在之后的关于 `[[prototype]]` 一章详细讨论。
+
+### Getters & Setters
+ES5中引入的 `[[Get]]` 和 `[[Put]]` 只能针对属性的层面，ES6中引入的 `proxy` 则能在整个对象层面改写默认的 `[[Get]]` 和 `[[Put]]` 属性，以便该对象的每个属性值都能复用同一套逻辑。
+
+回到 `[[Get]]` 和 `[[Put]]`，它们的本质都是调用一个隐藏的函数去获取或者设置属性值。
