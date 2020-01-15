@@ -657,3 +657,29 @@ obj.a; // 4
 ```
 
 ### 存在(Existence)
+之前我们提到，无论是对象的某个属性不存在，还是显示将这个属性的值赋值为 `undefined`，最终获取到该属性的值都是 `undefined`，那要如何在两者间做区分呢？答案是直接询问对象这个属性是否存在，而不是获取属性值：
+
+```js
+var obj = {
+  a: 2
+};
+
+('a' in obj); // true
+('b' in obj); // false
+
+obj.hasOwnProperty('a'); // true
+obj.hasOwnProperty('b'); // false
+```
+
+`in` 操作符会检查对象中是否存在某个属性，如果该属性存在于 `[[Prototype]]` 原型链上，则会遍历原型链；与之相反，`hasOwnProperty(…)` 只会检测对象自身的属性。
+
+`hasOwnProperty(…)` 该方法挂载在 `Object.prototype` 上，因此能被普通对象获取到，除非该对象没有链接到 `Object.prototype`，比如用 `Object.create(null)` 创建的对象。因此显示的用 call 绑定 this 来调用hasOwnProperty 是一个较为稳妥的办法：`Object.prototype.hasOwnProperty.call(obj, 'a');`。
+
+**Note**：`in` 操作符只是检测是对象是否包含某个属性(名)，而不是检测它是否有某个属性值，比如 `4 in [1, 4, 9];` 得到的是 `false`，因为该数组不存在索引(属性) `4`，而 `2 in [1, 4, 9]` 得到 `true`，因为索引(属性) `2` 存在。
+
+#### 枚举(Enumeration)
+之前简短的提到 `enumerable` 属性描述器，是决定一个对象的属性是否能够被枚举到，但它到底有什么特性？
+
+```js
+
+```
