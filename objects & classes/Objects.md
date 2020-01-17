@@ -681,5 +681,64 @@ obj.hasOwnProperty('b'); // false
 之前简短的提到 `enumerable` 属性描述器，是决定一个对象的属性是否能够被枚举到，但它到底有什么特性？
 
 ```js
+var obj = {};
 
+Object.defineProperty(
+  obj,
+  'a',
+  { enumerable: true, value: 2 }
+);
+
+Object.defineProperty(
+  obj,
+  'b',
+  { enumerable: false, value: 3 }
+);
+
+obj.b; // 3
+'b' in obj; // true
+obj.hasOwnProperty('b'); // true
+
+for (const k in obj) {
+  console.log(k, obj[k]);
+}
+// 'a' 2
 ```
+
+👆属性 `obj.b` 实际上是存在在对象 `obj` 中的，但是却没能在 `for…in` 循环中被遍历出来，而属性 `obj.a` 则能，这说明 `enumerable` 描述符的作用就在于描述 *迭代对象的属性时，该属性是否包括在其中*。
+
+**Note**：若使用 `for…in` 循环遍历数组，会得到“意外的惊喜” —— 除了遍历出数字索引之外，还会拿到所有能够被枚举的其余属性；最佳的实践依然是 `for…in` 用于对象，传统的 `for` 循环用于数组。
+
+另外一种能区分属性是否能被枚举的方法：
+
+```js
+var obj = {};
+
+Object.defineProperty(
+  obj,
+  'a',
+  { enumerable: true, value: 2 }
+);
+
+Object.defineProperty(
+  obj,
+  'b',
+  { enumerable: false, value: 3 }
+);
+
+obj.propertyIsEnumerable('a'); // true
+obj.propertyIsEnumerable('b'); // false
+
+Object.keys(obj); // ["a"]
+Object.getOwnPropertyNames(obj); // ["a", "b"]
+```
+
+`propertyIsEnumerable(…)` 会检测某个属性是否能被枚举。
+
+`Object.keys(…)` 会返回所有能被枚举的属性名的数组；与之相反，`Object.getOwnPropertyNames(…)` 则会返回该对象自身拥有的所有属性名，无论这个属性是否能被枚举。
+
+总结一下，`in` 和 `hasOwnProperty(…)` 不同之处在于前者会遍历对象的原型链去验证属性是否存在，后者只会询问对象自身；而 `Object.keys(…)` 和 `Object.getOwnPropertyNames(…)` 都只会询问对象自身。
+
+内置的API中并没有一个能够遍历对象和它的原型链(和 `in` 操作符类似)从而获取到所有属性名的方法。但你能够模拟一个，大致的思路是遍历对象所有的 `[[Prototype]]` 原型链，在每一层调用 `Object.getOwnPropertyNames(…)` 获取到属性名，从而获取对象以及它原型链上的所有属性名。
+
+### 迭代(Iteration)
