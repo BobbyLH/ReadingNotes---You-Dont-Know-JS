@@ -776,7 +776,7 @@ for (let v of arr) {
 // 3
 ```
 
-`for…of` 循环会挨个问 *迭代的对象(iterator object)* 的需要迭代的东西，它会在迭代返回成功的值后，再次调用迭代对象的 `next()` 方法，以进行下一次迭代。
+`for…of` 循环会挨个问 *可迭代对象的迭代器(iterator object)* 的需要迭代的东西，它会在返回成功的值后，再次调用可迭代对象的 `next()` 方法，以进行下一次迭代。
 
 数组有内置的迭代函数，因此我们可以手动的调用这个迭代函数看看它到底做了什么：
 
@@ -790,3 +790,56 @@ it.next(); // {value: 2, done: false}
 it.next(); // {value: 3, done: false}
 it.next(); // {done: true}
 ```
+
+之前提及ES6新增的类型 `Symbol` 是一个唯一的不会重复的值，而通过 `Symbol.iterator` 属性，则能获取到可迭代对象内置的迭代器；从名字上来看，*迭代器(iterator)* 和 *可迭代对象(iterable)* 貌似差不太多，但迭代器本身并不是可迭代对象，它仅仅是一个返回可迭代对象的函数罢了！
+
+从👆上面的代码中可以看出 `next()` 方法会返回一个对象，这个对象有两个属性，一个是 `value`，即当前迭代返回的值；另一个是布尔值 `done`，代表是否迭代完成。
+
+唯一有些“奇怪”的是当第三次调用 `it.next()` 时，返回 `done: false` —— 你不得不再次调用 `it.next()` 而后拿到 `done: true` 从而结束迭代。这个“奇怪”的现象是源自于 生成器(generator) 函数，不在目前的讨论范围之内。
+
+当数组能够无缝的接入 `for…of` 循环时，普通的对象并没有内置迭代器，对 `for…of` 循环只能望洋兴叹。至于为什么普通对象没有内置的迭代器的原因很复杂，但从长远来看是一件好事 —— 否则处理对象这个类型的时候，会有很多的麻烦。
+
+但并不是说普通对象就不能拥有迭代器了：
+
+```js
+var obj = {
+  a: 2,
+  b: 3
+};
+
+Object.defineProperty(obj, Symbol.iterator, {
+  enumerable: false,
+  writable: false,
+  configurable: true,
+  value: function () {
+    var o = this;
+    var idx = 0;
+    var ks = Object.keys(o);
+    return {
+      next: function () {
+        return {
+          value: o[ks[idx++]],
+          done: idx > ks.length
+        };
+      }
+    };
+  }
+});
+
+var it = obj[Symbol.iterator]();
+
+it.next(); // {value: 2, done: false}
+it.next(); // {value: 3, done: false}
+it.next(); // {value: undefined, done: true}
+
+for (let v of obj) {
+  console.log(v);
+}
+// 2
+// 3
+```
+
+**Note**：为了和基本的迭代器特征保持一致，我们使用 `Object.defineProperty(…)` 来将其定义对象的一个不可枚举、不可写的一个属性，并且使用 `Symbol.iterator` 作为计算属性名，避免了被改写的可能。当然，直接用 `var obj = {a: 2, b: 3, [Symbol.iterator]: function () {/* … */}}` 对象字面量来定义也是可行的。
+
+👆每一次调用 `next()` 方法时，变量 `idx` 都会自增一位，并且判断 `idx` 是否超过了保存对象属性名的数组 `ks` 的长度，若超过了，则表示迭代结束。如果仅仅判断 `!!o[ks[idx - 1]]` 是不够严谨的做法 —— 比如对于 `var obj = {a: 2, b: 3, c: undefined, d: 0, e: null};`，其中 `c`、`d`、`e` 都是 Falsy 的值，这样一来就没办法将它们正确的迭代出来了。
+
