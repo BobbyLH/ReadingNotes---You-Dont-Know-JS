@@ -843,3 +843,41 @@ for (let v of obj) {
 
 👆每一次调用 `next()` 方法时，变量 `idx` 都会自增一位，并且判断 `idx` 是否超过了保存对象属性名的数组 `ks` 的长度，若超过了，则表示迭代结束。如果仅仅判断 `!!o[ks[idx - 1]]` 是不够严谨的做法 —— 比如对于 `var obj = {a: 2, b: 3, c: undefined, d: 0, e: null};`，其中 `c`、`d`、`e` 都是 Falsy 的值，这样一来就没办法将它们正确的迭代出来了。
 
+当然，👆上面手动实现的迭代器是一个很基础的逐个值迭代的版本，当然我们可以实现一个更复杂的定制化的迭代器，配合 `for…of` 循环，以满足不同的数据结构迭代的需求。例如，有一个 `Pixel` 对象包含了 `x` 和 `y` 的坐标值，而后根据其原点到坐标点的直线距离的长短来进行迭代，过滤掉一些特别远的距离等等的需求……只要你的迭代器定义了 `next` 方法，并且返回 `{ value: any, done: boolean }`，并在结束迭代的时候返回 `{ done: true }`，那么 `for…of` 就能够对其进行迭代。
+
+实际上，你也能够定义一个没有终点、无限迭代的迭代器，比如返回一个随机数、递增的数、唯一的id……这样的迭代器在使用的时候一定要制定相应的“出口”，否则会让你的程序永久挂起直到崩溃：
+
+```js
+const randoms = {
+  [Symbol.iterator]: function () {
+    return {
+      next: function () {
+        return { value: Math.random() };
+      }
+    };
+  }
+};
+
+const randoms_pool = [];
+for (let n of randoms) {
+  randoms_pool.push(n);
+
+  if (randoms_pool.length >= 100) break;
+}
+```
+
+👆 `if (randoms_pool.length >= 100) break;` 就是一个“出口”，它确保你的程序不会因为无限的迭代而崩溃。
+
+
+## 回顾(Review)
+对象的创建，有字面量和构造函数两种形式，字面量的形式更加常用，但构造函数在某些情况下，提供了更多的选项。
+
+很多人都以为在JS中万事万物皆对象，但这是错误的观念 —— 对象只是7种主要类型中的一种。对象也有它的子类型，比如 `function` 函数类型、数组类型(内置了 `[object Array]` 的标签)等。
+
+普通对象就是键值对的集合(collections of key/value pairs)；获取属性值可以通过点运算符 `.propName` 或 `['propName']` 语法。任何属性值的获取，JS引擎都会调用内置的 `[[Get]]` 运算(设置属性值则调用 `[[Set]]` 运算)，在默认规则下，它会先直接在对象上查找属性是否存在，若不存在，则会递归遍历 `[[Prototype]]` 原型链。
+
+对象属性都一组特性能够被属性描述器控制，例如 `writable` 、`configurable` 等。除此之外，`Object.preventExtensions()`、`Object.seal()`、`Object.freeze()` 能够控制对象属性级别的不可变性(immutability)的程度。
+
+属性值不一定非得要属性存在 `value` 值 —— 你还能能通过访问器属性(getter 或 setter)获取属性的值。`enumerable` 枚举描述器能够让属性是否能在 `for…in` 循环中被遍历出来。
+
+为普通对象添加迭代器能够让你使用 `for…of` 去遍历对象，并直接获取到属性值。无论是内置还是自定义的迭代器的实现，都需要定义 `next()` 方法去遍历被迭代的数据结构。
