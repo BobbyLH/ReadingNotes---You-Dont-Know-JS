@@ -13,3 +13,5 @@
 - [`this` 看上去是那么回事了！](/objects%20%26%20classes/this%20Makes%20Sense.md) (`this` All Makes Sense Now!)
 
 - [对象](/objects%20%26%20classes/Objects.md) (Objects)
+
+- [“类”与对象的混合](/objects%20%26%20classes/Mixing%20Class.md) (Objects)
