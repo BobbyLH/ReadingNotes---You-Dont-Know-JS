@@ -54,3 +54,35 @@ JS仅仅通过一系列的形似 “类” 的语法，来满足进行 “类”
 ![avatar](./assets/mixing_up_class_object_theory.png)
 
 ### 构造函数(Constructor)
+类的实例的构建通常是由类中一个特殊的方法完成，这个方法一般和类同名，被成为构造函数(constructor)，它的工作就是显示地初始化实例所需要的数据。
+
+比如👇下面的伪代码：
+```js
+class CoolGuy {
+  specialTrick = 'nothing'
+
+  CoolGuy (trick) {
+    specialTrick = trick
+  }
+
+  showOff () {
+    output('Here is my trick:' + specialTrick)
+  }
+}
+```
+
+实例化一个 `CoolGuy`，只需要调用类的构造函数：
+
+```js
+Joe = new CoolGuy('jumping rope')
+
+Joe.showOff()
+```
+
+`CoolGuy` 类在使用 `new CoolGuy(..)` 会直接调用构造函数 `CoolGuy ()`，随后会返回一个实例化的对象，在这个对象上能调用 `showOff()` 输出某个 `CoolGuy` 的特殊技能。
+
+*跳绳显然让 Joe 变得很酷*
+
+构造函数属于类，通常和类同名。`new` 关键字能让编程语言的引擎知道你想要构造出一个类的实例对象。
+
+## 类的继承(Class Inheritance)
