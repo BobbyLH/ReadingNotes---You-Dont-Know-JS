@@ -169,3 +169,51 @@ class SpeedBoat extends Vehicle {
 因为在其他编程语言中，类继承的行为是通过复制拷贝完成的，因此一些JS的开发者也通过 **mixins** 模拟了类似的行为。而 mixin 有两种类型，**显示的(explicit)** 和 **隐式的(implicit)**。
 
 ### 显示的混合(Explicit Mixins)
+回顾之前 `Car` 类继承 `Vehicle` 类的例子。虽然JS不会自动的将 `Vehicle` 的方法和属性复制拷贝到 `Car` 里，但我们可以写一个工具函数，手动进行复制拷贝。通常这样的工具函数在很多的库和框架中叫做 `extend(…)`，但下面我们为了展示的目的，称其为 `mixin(…)`。
+
+```js
+// 一个极简的 mixin
+function mixin (sourceObj, targetObj) {
+  for (const k in sourceObj) {
+    if (!(k in targetObj)) {
+      target[k] = sourceObj[k];
+    }
+  }
+
+  return targetObj;
+}
+
+function output (msg) {
+  return console.log(msg);
+}
+
+var Vehicle = {
+  engines: 1,
+
+  ignition: function () {
+    output('点火！')
+  },
+
+  drive: function () {
+    this.ignition();
+    output('老司机开车了！')
+  }
+};
+
+var Car = mixin(Vehicle, {
+  wheel: 4,
+
+  drive: function () {
+    Vehicle.drive.call(this);
+    output('油门到底！');
+  }
+})
+```
+
+**Note**：很微妙但是很重要的是，👆上面没有任何关于类的处理，因为本质上在JS中并没有类的存在。`Car` **mixin** `Vehicle` 只是对象的复制拷贝而已。
+
+`Car` 从 `Vehicle` 中拷贝其属性和函数。从技术角度讲，函数并不是实际进行复制拷贝操作，而只是拷贝了引用的地址而已。因此 `Car` 的一个属性叫 `ignition` 是拷贝了 `Vehicle` 的 `ignition` 函数的引用地址。但对于 `engines` 属性确实是拷贝了其值 `1`。
+
+对于 `drive` 属性，`Car` 本身已经有了，因此不会被重写。
+
+#### 多态的回顾("Polymorphism" Revisited)
