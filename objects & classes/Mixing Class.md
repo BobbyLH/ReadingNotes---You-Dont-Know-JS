@@ -217,3 +217,52 @@ var Car = mixin(Vehicle, {
 对于 `drive` 属性，`Car` 本身已经有了，因此不会被重写。
 
 #### 多态的回顾("Polymorphism" Revisited)
+`Vehicle.drive.call(this)` 被称为 *显示的伪多态(explicit pseudo-polymorphism)*。回忆之前提及的 伪代码 `super.dirve()`，它被称为 *相对性多态(relative polymorphism)*。
+
+在ES6之前，JS并没有提供实现 相对性多态 的能力，因为 `Vehicle` 和 `Car` 都实现了 `dirve` 方法，为了区别到底调用哪一个，不得不使用绝对引用 —— 显示的直接指向 `Vehicle` 的 `drive` 方法并且调用它。而加上 `.call(this)` 是为了将函数执行的上下文绑定到 `Car` 中，否则 `drive` 的 `this` 就会隐式的绑定到 `Vehicle` 上。
+
+**Note**：如果函数名没有 重叠(overlapped) 或 称为 覆盖(shadowed)，那么我们也不需要使用 显示的伪多态 来模拟真实的多态 —— 因为 `mixin(…)` 会将 `Vehicle.drive` 拷贝到 `Car` 中，此时只需要直接使用 `this.dirve()` 即可访问并调用 `dirve` 方法。
+
+在一些其他的面向类的语言中，类似 `Vehicle` 和 `Car` 相对性多态 的关系只会在一个地方创建和维护，一般是在类定义的顶部。但因为JS的特殊性，显示的伪多态 即便能够模拟 “多继承” 的特性，但由于每个需要模拟多态的地方都要单独的进行引用，这会造成复杂性上升，让程序变得更脆弱。显示的伪多态 不仅难以维护、难以读懂，还会带来更多的复杂性，显示的伪多态 应该尽量避免使用，因为其成本远远大于收益。
+
+#### 混合的拷贝(Mixing Coping)
+👆上述版本的 `mixin` 是迭代遍历所有 `sourceObj`，如果其属性名在 `targetObj` 中不存在，则会进行复制拷贝的动作。如果换一种方式：先往一个空对象上执行所有的拷贝动作，而后再将 `targetObj` 中已经存在的属性覆盖掉这个复制完毕的空对象的属性 —— 我们虽然能够省略掉属性名是否存在的检查，但看上去显然更笨拙和低效，同样性能也会差一些：
+
+```js
+function mixin_all (sourceObj, targetObj) {
+  for (const k in sourceObj) {
+    targetObj[key] = sourceObj[key];
+  }
+
+  return targetObj;
+}
+
+var Vehicle = {
+  engines: 1,
+
+  ignition: function () {
+    output('点火！')
+  },
+
+  drive: function () {
+    this.ignition();
+    output('老司机开车了！')
+  }
+};
+
+var Car = mixin_all(Vehicle, {});
+
+mixin_all({
+  wheel: 4,
+
+  drive: function () {
+    Vehicle.drive.call(this);
+    output('油门到底！');
+  }
+}, Car);
+```
+
+无论是那种版本，我们都实现了将 `Vehicle` 中的内容拷贝到 `Car` 中去，而 "mixin" 这个名字的内涵就是如此：`Car` 混合进了 `Vehicle` 的内容。而对 `Car` 的操作则是独立的，不会影响到 `Vehicle`，反之亦然。
+
+**Note**：一个细节需要注意的是，如果 `mixin` 的复制的是一个复杂类型(比如一个数组)地址引用，那么实际上 `sourceObj` 和 `targeObj` 都共享的是同一个对象，因此它们会相互影响。
+
