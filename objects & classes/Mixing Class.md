@@ -266,3 +266,59 @@ mixin_all({
 
 **Note**：一个细节需要注意的是，如果 `mixin` 的复制的是一个复杂类型(比如一个数组)地址引用，那么实际上 `sourceObj` 和 `targeObj` 都共享的是同一个对象，因此它们会相互影响。
 
+因为 mixin 对于复杂类型的复制拷贝都是地址引用，这一点和传统的面向类的语言有很大的区别 —— 并没有实现真正的复制。在JS中，并没有支持标准可靠拷贝函数的方法(通过 `eval()` 或者 `new Function()` 实现的复制拷贝会丢失函数的调用栈)，因此一旦函数对象有任何的变动，都会影响到所有通过地址引用调用该函数的变量。
+
+显示 mixin 的功效被夸大了，即便你能够模拟出 “多继承(multiple inheritance)” 的功能，但其背后的实现会带来更多的问题，比如复杂类型地址引用、多个对象都实现了同名方法或属性以至于在 mixin 时的冲突……即便有一些第三方的库通过 “延迟绑定(late binding)” 或者其他 “有毒” 的方式 “解决” 了这些问题，但是这些 “花招(tricks)” 往往带来学习成本上升、复杂度上升、低性能的后果。
+
+#### 寄生继承(Parasitic Inheritance)
+寄生继承是显示 mixin 的一种变体，它的实现实际上一部分是显示的 mixin，另一部分则是隐式的 mixin。Douglas Crockford 是其推广者：
+
+```js
+function output (msg) {
+  return console.log(msg);
+}
+
+function Vehicle () {
+  this.engines = 1;
+}
+
+Vehicle.prototype.ignition = function () {
+  output('点火！');
+}
+
+Vehicle.prototype.drive = function () {
+  this.ignition();
+  output('老司机开车了！');
+}
+
+function Car () {
+  var car = new Vehicle();
+
+  car.wheels = 4;
+
+  var vehDrive = car.drive;
+
+  car.drive = function () {
+    vehDrive.call(this);
+    output('油门到底！');
+  }
+
+  return car;
+}
+
+var myCar = new Car();
+
+myCar.drive();
+// 点火！
+// 老司机开车了！
+// 油门到底！
+```
+
+正如你所见，在 `Car` 中直接初始化了 `Vehicle`，而后直接在这个实例上进行 mixin 的操作 —— 保留需要的部分，替换掉子类需自定义的部分，最终将这个实例对象做为子类的实例对象返回出去 —— 调用 `new` 关键字，若没有返回值，则会创建一个新对象，而后将 `this` 绑定到该对象上，而后作为实例化的结果；若有返回值则直接将返回值作为结果 —— 因此带不带 `new` 关键字调用 `Car` 都得到的是一样的结果，而且不带 `new` 调用还会节省 新对象创建被废弃 而后 垃圾回收(garbage-collection) 的过程。
+
+### 隐式混合(Implicit Mixins)
+隐式混合和显示混合非常接近，它们都有同样的注意事项和警告：
+
+```js
+
+```
