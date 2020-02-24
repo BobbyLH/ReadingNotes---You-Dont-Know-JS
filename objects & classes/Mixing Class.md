@@ -320,5 +320,39 @@ myCar.drive();
 隐式混合和显示混合非常接近，它们都有同样的注意事项和警告：
 
 ```js
+var Something = {
+  cool: function () {
+    this.greeting = 'Hello World';
+    this.count = this.count ? this.count + 1 : 1;
+  }
+};
 
+Something.cool();
+Something.greeting; // 'Hello World'
+Something.count; // 1
+
+var Another = {
+  cool: function () {
+    Something.cool.call(this);
+  }
+};
+
+Another.cool();
+Another.greeting; // 'Hello World'
+Another.count; // 1
 ```
+
+上面👆通过借用 `Something.cool.call(this)` 将 `Something.cool` 的上下文绑定到 `Another` 中，我们实现了将 `Something`  “隐式的混合” 到 `Another` 中。但与 “显式的混合” 不同的是它不涉及到对复杂对象地址的引用。
+
+## 回顾(Review)
+面向对象是一种很广泛的编程泛型，很多编程语言都对其提供了底层设计和语法的支持。JS 虽然也提供了语法上的支持，但其底层的实现和其他语言有很大的不同。
+
+**类意味着拷贝复制(Classes means copies)**
+
+在传统的面向对象的编程语言中，实例化的过程就是将类的方法和属性拷贝到实例的过程；继承的过程同样也是将父类的方法和属性拷贝到子类的过程。而多态的实现，虽然看上去像是子类引用了父类的方法，但底层的实现依然是拷贝。
+
+而JS中面向对象的实现，即便是在ES6提供了各种语法糖的情况下，依然是基于 `[[prototype]]` 原型对象的引用罢了。
+
+虽然 `mixin` 的方式模拟了部分拷贝行为，但其带来的是代码维护成本的上升、可靠性降低、性能变差等问题。
+
+总的来讲，在JS中模拟类的实现(无论是内置的还是第三方库提供的)，都是在埋雷，而不是解决实际的问题。
