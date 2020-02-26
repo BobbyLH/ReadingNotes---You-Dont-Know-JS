@@ -14,4 +14,6 @@
 
 - [对象](/objects%20%26%20classes/Objects.md) (Objects)
 
-- [“类”与对象的混合](/objects%20%26%20classes/Mixing%20Class.md) (Objects)
+- [“类”与对象的混合](/objects%20%26%20classes/Mixing%20Class.md) (Mixing Class)
+
+- [原型](/objects%20%26%20classes/Prototypes.md) (Prototypes)
