@@ -118,7 +118,7 @@ Object.getPrototype(a) === Foo.prototpye; // true
 #### 名字真的有那么重要么？！(What' in the name)
 上一章中我们看见过类似的图：
 
-![avatar](./assets/prototype_what's_name.png)
+![原型继承](./assets/prototype_what's_name.png)
 
 👆唯一的区别是箭头的方向反过来了 —— 这当然是因为JS中类的继承和实例化并没有真正进行赋值拷贝的动作，而仅仅是在不同对象间，通过 `[[Prototype]]` 建立了连接。因而箭头的方向指向的是关联到的对象。
 

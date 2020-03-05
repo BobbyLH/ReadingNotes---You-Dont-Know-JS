@@ -42,7 +42,7 @@ foo(); // TypeError
 
 var foo = function () {};
 ```
-![avatar](./assets/hoisting_function_expression.png)
+![变量的提升](./assets/hoisting_function_expression.png)
 
 👆报错信息是 `TypeError`，证明变量 `foo` 的确是声明了，否则应该是提示 `ReferenceError`；但变量的赋值还未发生，因此 `foo` 在执行的时候并不是一个函数，所以有 `TypeError` 这个错误。
 
@@ -110,7 +110,7 @@ if (true) {
   function foo() { console.log(2); }
 }
 ```
-![avatar](./assets/hoisting_function_first.png)
+![函数的提升](./assets/hoisting_function_first.png)
 
 ## 回顾(Review)
 如 `var a = 2;` 这般的语句会被JS引擎分成两部分：`var a` 和 `a = 2;`；前者是在编译阶段发生，后者出现在执行阶段。

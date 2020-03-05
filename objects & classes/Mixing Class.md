@@ -51,7 +51,7 @@ JS仅仅通过一系列的形似 “类” 的语法，来满足进行 “类”
 
 考虑类和实例的直接关系，而不是实例对象和类来源的间接关系。**一个类实例化成一个对象是通过复制操作。** 比如下图，箭头方法代表了复制操作的产生，概念上和物理上都有：
 
-![avatar](./assets/mixing_up_class_object_theory.png)
+![建筑理论](./assets/mixing_up_class_object_theory.png)
 
 ### 构造函数(Constructor)
 类的实例的构建通常是由类中一个特殊的方法完成，这个方法一般和类同名，被成为构造函数(constructor)，它的工作就是显示地初始化实例所需要的数据。
@@ -159,7 +159,7 @@ class SpeedBoat extends Vehicle {
 
 如下图👇所示，另一个被称为 “砖石问题” 是上述问题的变体 —— 子类D 继承了两个父类 B 和 C，而它们两个都继承了父类A。如果 A 定义了方法 `dirve()`，而后 B 和 C 利用多态的特性重写了 `dirve()` 方法。若此时当 D 引用 `dirve()` 方法时，到底应该引用哪一个父类的 `dirve()` 方法呢？
 
-![avatar](./assets/mixing_up_class_object_multiple_inheritance.png)
+![多继承](./assets/mixing_up_class_object_multiple_inheritance.png)
 
 思考这个复杂的问题是为了和 Javascript 类的工作机制作对比。在JS中简化了这个问题 —— 不提供多继承的内置支持。很多人都认为这是件好事，因为复杂度的降低足以弥补牺牲掉的功能。但是这并不能阻止开发者使用各种办法模拟多继承的特性。
 

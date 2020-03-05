@@ -17,7 +17,7 @@ bar();
 
 console.log(a, b, c);
 ```
-![avatar](./assets/function_block_referenceError.png)
+![引用错误1](./assets/function_block_referenceError.png)
 
 当然，在 `foo` 和 `bar` 内的作用域，都是能够访问这些标识符的。
 
@@ -112,7 +112,7 @@ console.log(foo); // ReferenceError
 **Note**: 区分 *函数表达式* 和 *函数声明式* 的简单办法就是看 `function` 出现的位置，如果 `function` 出现在第一个，就属于是 *函数声明式*，否则就是 *函数表达式*。
 
 其次，`foo` 在外部作用域是无法被访问到的，而在表达式的内部作用域是能被访问的，这避免了全局的标识符污染。
-![avatar](./assets/function_block_referenceError1.png)
+![引用错误2](./assets/function_block_referenceError1.png)
 
 ### 匿名和命名(Anonymous vs. Named)
 最常见的使用匿名函数的例子就是在我们将函数作为回调参数的时候：
@@ -129,7 +129,7 @@ setTimeout(function () {
   throw new Error();
 })();
 ```
-![avatar](./assets/function_block_anonymous_track.png)
+![匿名函数调用栈]](./assets/function_block_anonymous_track.png)
 
 2. 递归(recursion)、`arguments.callee`、事件绑定后的解绑操作、定时器的清除操作……都需要通过函数名引用函数自身，但显然匿名函数不具备这个功能；
 
@@ -206,7 +206,7 @@ if (foo) {
 
 console.log(bar); // ReferenceError
 ```
-![avatar](./assets/function_block_block_scope.png)
+![块级作用域](./assets/function_block_block_scope.png)
 
 **Note**: 👆上面使用了 `let`，这是 *ES6* 的新特性，稍后会提及。
 
@@ -224,7 +224,7 @@ try {
 
 console.log(err); // ReferenceError
 ```
-![avatar](./assets/function_block_trycatch.png)
+![try/catch](./assets/function_block_trycatch.jpg)
 
 👆由此可见，`err` 只存在于 `catch` 语句中，外部是无法访问到的。除了在一些非常老旧的IE浏览器中不支持之外，这个在 *ES3* 中确定标准在绝大部分浏览器中都得到了很好的支持。
 

@@ -72,7 +72,7 @@
     o.e = a;
     JSON.stringify(a); // TypeError ...
     ```
-    ![avatar](./assets/coercion_circular_references.png)
+    ![循环引用](./assets/coercion_circular_references.png)
 
   * toJSON
     + 如果一个对象定义了toJSON的方法，那么在做序列化的过程中，这个方法会被唤起并决定哪些值会被序列化
@@ -440,7 +440,7 @@ timestamp = Date.now()
   String(s1); // 'Symbol(test)'
   s1 + ''; // TypeError
   ```
-  ![avatar](./assets/coercion_symbol_err_str.png)
+  ![Symbol转字符串报错](./assets/coercion_symbol_err_str.png)
 
 - 对于转换`number`类型, 都会报错
   ```javascript
@@ -449,7 +449,7 @@ timestamp = Date.now()
   Number(s2); // TypeError
   +s2; // TypeError
   ```
-  ![avatar](./assets/coercion_symbol_err_num.png)
+  ![Symbol转数字报错](./assets/coercion_symbol_err_num.png)
 
 - 对于转换`boolean`类型, 则都允许
   ```javascript
@@ -767,7 +767,7 @@ timestamp = Date.now()
 - ❗如果 `==` 两边的操作数任一一方存在 **数组**，并且数组里包含了 `Symbol`❌❌❌，**绝对不要使用 `==`**
 
 - 最后盗一张图，来自[Alex Dorey](https://github.com/dorey/JavaScript-Equality-Table)对于一些常见类型的值在和这些值的集合中进行逐一比较的结论：
-  ![avatar](./assets/coercion_comparsion.png)
+  ![常见的类型值之间的比较](./assets/coercion_comparsion.png)
   
 ----
 

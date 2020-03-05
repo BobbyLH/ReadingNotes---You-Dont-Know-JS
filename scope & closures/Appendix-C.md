@@ -25,7 +25,7 @@ obj.cool(); // awesome
 setTimeout(obj.cool, 1000); // not awesome
 ```
 
-![avatar](./assets/closure_appendix_c_this_loss.png)
+![隐式丢失this指向](./assets/closure_appendix_c_this_loss.png)
 
 👆在 `setTimeout` 里面执行关于 `obj.cool` 的回调函数时，发现 `this.id` 获取的值是全局作用域中 `var id` 的值；产生这个问题的根源是在回调函数中丢失了对于 `this` 的绑定。
 
@@ -50,7 +50,7 @@ setTimeout(function () {
 }, 1000); // awesome
 ```
 
-![avatar](./assets/closure_appendix_c_this_self.png)
+![变量self保存this](./assets/closure_appendix_c_this_self.png)
 
 👆显然，这是回避了 `this` 指向的问题，转而用词法作用域来解决 —— `self.id` 本质上就是通过 *RHS* 进行词法作用域的查找，将 `obj` 作为参数传入，因此在 `setTimeout` 中，`obj.cool` 取得的值就是 `obj.id` 的值，而非全局变量 `id` 的值。
 
@@ -70,7 +70,7 @@ obj.cool(); // awesome
 setTimeout(function () { obj.cool() }, 1000); // awesome
 ```
 
-![avatar](./assets/closure_appendix_c_this_otherfn.png)
+![依然利用隐式绑定规则](./assets/closure_appendix_c_this_otherfn.png)
 
 👆同样，这也是利用了词法作用域的规则，但是函数 `cool` 的 `this` 是被隐式的绑定在调用它的对象 `obj` 上。
 
@@ -93,7 +93,7 @@ obj.cool(); // awesome
 setTimeout(obj.cool.bind(obj), 1000); // awesome
 ```
 
-![avatar](./assets/closure_appendix_c_this_bind.png)
+![硬绑定](./assets/closure_appendix_c_this_bind.png)
 
 ----
 
@@ -115,6 +115,6 @@ cool(); // awesome
 setTimeout(cool, 1000); // awesome
 ```
 
-![avatar](./assets/closure_appendix_c_this_arrowfn.png)
+![箭头函数](./assets/closure_appendix_c_this_arrowfn.png)
 
 👆显而易见的是，箭头函数和普通函数在处理 `this` 时有不一样的机制，前者显然是在书写的时候(`var cool = obj.cool()`)，其内部返回的函数 `() => console.log(this.id)` 就绑定了 `this` 的指向为 `obj`，而不是等到调用的时候再去根据一定的规则获取 `this`。

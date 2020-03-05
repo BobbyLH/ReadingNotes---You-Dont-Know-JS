@@ -413,7 +413,7 @@ function foo () {
 
 foo();
 ```
-![avatar](./assets/javascript_strict_mode.png)
+![严格模式](./assets/javascript_strict_mode.png)
 
 ---
 
@@ -432,10 +432,10 @@ var bar = function baz () {
 
 👆第一个表达式将一个 _匿名(anonymous)函数_ 赋值给变量 `foo`；第二个表达式将名为 `baz` 的函数赋值给变量 `bar`，此时在外层作用域只能通过 `bar` 访问到这个函数：
 
-![avatar](./assets/javascript_function_as_value.png)
+![函数表达式](./assets/javascript_function_as_value.png)
 
 ### 立即执行函数表达式(Immediately Invoked Function Expressions IIFEs)
-一个 _immediately invoked function expression(IIFE)_ 的🌰：
+一个 _immediately invoked function expression(IIFE)_ 的例子🌰：
 ```javascript
 (function () {
   console.log('It is a IIFE!');
@@ -551,7 +551,7 @@ new foo(); // undefined
 - 非严格模式中，`foo` 中的 `this` 指向的是全局对象；
 
 - 严格模式中，`foo` 中的 `this` 是 `undefined`，因此获取 `this.bar` 会报错：
-  ![avatar](./assets/javascript_this_strict_mode.png)
+  ![严格模式中的this](./assets/javascript_this_strict_mode.png)
 
 - `obj1.foo()` 的 `this` 指向的是 `obj1` 对象，这是隐式调用；
 
@@ -612,7 +612,7 @@ if (!Number.isNaN) {
 
 3. 使用新特性也能够给 _TC39(Javascript committee)_ 提供更早的反馈，问题暴露的越早越能够即使修复和更改这些问题，避免造成 _永久的Bug_，比如 `typeof null; // "object"`……
 
-一个🌰，关于ES6新增的函数默认参数的新特性的：
+一个例子🌰，关于ES6新增的函数默认参数的新特性的：
 ```javascript
 function foo (a = 2) {
   console.log(a);

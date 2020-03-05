@@ -206,7 +206,7 @@ obj[Symbol('private')]; // undefined
 obj['private']; // "property4"
 ```
 
-![avatar](./assets/object_computed_property_name.png)
+![计算属性名](./assets/object_computed_property_name.png)
 
 ### 属性 vs. 方法(Property vs. Method)
 有些程序员喜欢纠结当对象的一个属性值是函数时，应该称它为方法。若要区分 *方法获取(method access)* 和 *属性获取(property access)*，听上去总感觉怪怪的 —— 特别是当JS的规范也做了同样的区分，interestingly。
@@ -430,7 +430,7 @@ obj.a = 3;
 // TypeError
 ```
 
-![avatar](./assets/object_writable.png)
+![可写属性](./assets/object_writable.png)
 
 **Note**：简单来讲，`writable: false` 实际上相当于定义了一个 no-op setter，当你使用赋值运算符 `=` 时，no-op setter 会抛出一个 `TypeError` 的错误。
 
