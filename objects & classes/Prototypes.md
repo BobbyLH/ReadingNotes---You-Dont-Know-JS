@@ -131,3 +131,51 @@ Object.getPrototype(a) === Foo.prototpye; // true
 另一个比较常见的术语是 “差异继承(differential inheritance)”，这样的叫法是认为我们当描述一个对象的行为时，是基于一个通用的对象，而后在其基础上做差异化的定制。但其本质上还是在假设你的 思维模式(mental model) 比 实际的发生(physically happening) 更为重要 —— 因为在本质上并没有发生复制拷贝的行为。
 
 ### “构造函数”("Constructor")
+回顾一下之前的代码：
+
+```js
+function Foo () {}
+
+var a = new Foo();
+```
+
+👆究竟是什么在作祟，使得我们认为 `Foo` 是一个类呢？
+
+一方面，当我们看见关键字 `new` 的时候，就自然而然的联想起了其他面向类的语言中，类的实例化过程，并且函数 `Foo` 在这个过程的确被调用了，就如同类的构造函数在实例化的时候会被调用一样。
+
+更有趣的是，JS 还“想尽一切办法”让我们相信确实有一个构造函数的存在：
+
+```js
+function Foo () {}
+
+Foo.prototype.constructor === Foo; // true
+
+var a = new Foo();
+a.constructor === Foo; // true
+```
+
+`Foo.prototype` 有一个公共的、不能枚举的属性叫做 `constructor`，这个属性指向的是 `prototype` 关联到的函数，即 `Foo`。而且，实例 `a` 看上去好像有一个属性也叫 `constructor`，但实际上 `a` 并没有这个属性，这就回到了之前我们提到的 *原型链查找* 的机制上去了。退一万步讲，就算 `a.constructor` 解析到了 `Foo`，这也不意味 `a` 就是 *构造函数(constructor)* “构造” 出来的。
+
+另一方面，一个以大写字母开头的函数(`Foo` 而非 `foo`)，难道不正暗示这个函数是一个类么？ —— 这可是社区规范！
+
+**Note**：甚至有些 linter 工具会生成提示信息或者报错，如果你在关键字 `new` 的后面调用一个小写字母开头的函数，或者以普通调用方式调用一个以大写字母开头的函数 —— 虽然这对 JS引擎 来说没有任何区别。
+
+#### 构造函数调用？(Constructor or Call?)
+在上面的代码片段中，我们很容易认为 `Foo` 是一个构造函数，不仅因为关键字 `new`、以大写字母开头的 `Foo`，更是由于最终的实例化结果生成了一个对象。
+
+实际上，`new` 关键字只是 劫持(hijack) 了函数调用，让其最终返回一个新对象(在函数没有自定义 `return` 的情况下)。在任何函数之前放上 `new`，都有相同的效果 —— 这只是 “构造函数调用(constructor call)”，而并不意味着这个函数是 “构造函数”。
+
+```js
+function NothingSpecial() {
+  console.log('just a function call');
+}
+
+var a = new NothingSpecial();
+// "just a function call"
+
+a; // NothingSpecial {}
+```
+
+👆 `NothingSpecial` 是一个非常普通的函数，但是当我们在它前面加上 `new` 之后，它就会构造出一个对象(这其实是一个副作用)，而后绑定到变量 `a` 上。这是一次 “构造函数调用”，但就 `NothingSpecial` 而言，它并不是一个构造函数。
+
+### 机制(Mechanics)
