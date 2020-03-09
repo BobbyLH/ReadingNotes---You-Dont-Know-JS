@@ -179,3 +179,64 @@ a; // NothingSpecial {}
 👆 `NothingSpecial` 是一个非常普通的函数，但是当我们在它前面加上 `new` 之后，它就会构造出一个对象(这其实是一个副作用)，而后绑定到变量 `a` 上。这是一次 “构造函数调用”，但就 `NothingSpecial` 而言，它并不是一个构造函数。
 
 ### 机制(Mechanics)
+```js
+function Foo (name) {
+  this.name = name;
+}
+
+Foo.prototype.myName = function () {
+  return this.name;
+}
+
+var a = new Foo('a');
+var b = new Foo('b');
+
+a.myName(); // "a"
+b.myName(); // "b"
+```
+
+👆上面的代码块体现了 JS 试图模拟类的实现的两个方面：
+  1. `this.name = name;` 为每一个实例化的对象添加了一个 `name` 属性，这和实例化类的过程中，单独为每个实例封装数据的思路如出一辙；
+
+  2. `Foo.prototype.myName = …` 在 `Foo.prototype` 对象上添加了 `myName` 方法，并在其中用 `this` 动态改变包含属性 `name` 的上下文；
+
+即便是 `a` 或 `b` 中并没有方法 `myName`，但通过原型链的查找，调用默认的 `[[Get]]` 算法，依然能够在 `Foo.prototype` 上获取到这个方法，并且通过 `this` 的隐式绑定规则，将上下文指向自身。但其底层的原理并不是将 `Foo.prototype` 这个对象分别拷贝到 `a` 或 `b` 上，而是通过连接。
+
+#### "Constructor" Redux
+上面的代码块中，`a.constructor` 指向的是函数 `Foo`，看上去好像是说 `a` 是由 `Foo` 构造出来的，但这是假象！`a.constructor` 之所以能够指向 `Foo`，完全是归功于原型代理(`[[Prototype]]` delegation)，如果你不小心这一点看上去微不足道的区别，到时候掉进坑里也不知道怎么回事：
+
+```js
+function Foo () {}
+
+Foo.prototype = {};
+
+var a1 = new Foo();
+
+a.constructor === Foo; // false
+a.constructor === Object; // true
+```
+
+看到了哈👆！`Foo.prototype` 是可以随意修改的，而且很多时候为了模拟类继承的特性，也不得不修改原型对象。不过这时候 `a.constructor` 就不再指向 `Foo` 了，因为新赋值的对象的 `constructor` 属性指向的是内置的 `Object(…)` 函数。
+
+#### 一错再错(Misconception, busted)
+当然，你可以手动重新赋值 `constructor` 属性，特别是你想继续错下去的时候：
+
+```js
+function Foo () {}
+
+Foo.prototype = {};
+
+Object.defineProperty(Foo.prototype, 'constructor', {
+  enumerable: false,
+  writable: true,
+  configurable: true,
+  value: Foo
+});
+```
+
+当你信心满满的调用 `Object.defineProperty(…)`，从而尽可能模拟 `constructor` 的可写、可配置，但不可枚举的属性特性时，你已经在某个实例就是被其 “构造函数” 所 “构造” 的道路上越走越远了。
+
+`constructor` 不是银弹，你能随意的重写它 —— 多么随意啊！如果你的代码中依赖于 `constructor` 做一些事情，那它带来的副作用很可能是产生bug的罪魁祸首！这种不可靠、不安全的引用，一定要尽量避免！
+
+
+## “原型继承”("Prototypal Inheritance")
