@@ -212,8 +212,8 @@ Foo.prototype = {};
 
 var a1 = new Foo();
 
-a.constructor === Foo; // false
-a.constructor === Object; // true
+a1.constructor === Foo; // false
+a1.constructor === Object; // true
 ```
 
 看到了哈👆！`Foo.prototype` 是可以随意修改的，而且很多时候为了模拟类继承的特性，也不得不修改原型对象。不过这时候 `a.constructor` 就不再指向 `Foo` 了，因为新赋值的对象的 `constructor` 属性指向的是内置的 `Object(…)` 函数。
@@ -240,3 +240,59 @@ Object.defineProperty(Foo.prototype, 'constructor', {
 
 
 ## “原型继承”("Prototypal Inheritance")
+通常情况下，我们认为的 “类的继承” 应该发生在父子类之间，而非类和实例之间。不过在JS中，之所以能够实现的 “原型继承”，反而是因为 `a` 能够 “继承” `Foo.prototype` 而实现的。
+
+![原型继承](./assets/prototype_prototypal_inheritance.png)
+
+👆上图体现出不仅仅 `a1` 代理了 `Foo.prototype`，并且 `Bar.prototype` 也做了一样的事情。看上去类似父子类继承的概念，但实际上除了箭头之外，只有代理联接(delegation links)，没有复制拷贝。
+
+一个典型的 “原型继承” 风格的代码：
+```js
+function Foo (name) {
+  this.name = name;
+}
+
+Foo.prototype.myName = function () {
+  return this.name;
+}
+
+function Bar (name, label) {
+  Foo.call(this, name);
+  this.label = label;
+}
+
+Bar.prototype = Object.create(Foo.prototype);
+
+Bar.prototype.myLabel = function () {
+  return this.name;
+}
+
+var a = new Bar('a', 'obj a');
+
+a.myName(); // "a"
+a.myLabel(); // "obj a"
+```
+
+👆上面实现 “原型继承” 的代码，最关键的一步是 `Bar.prototype = Object.create(Foo.prototype);`，`Object.create(…)` 会创建一个新对象，并且将这个对象的 `[[Prototype]]` 关联到指定的对象上(上面的例子是`Foo.prototype`)，并最终返回这个对象。换句话说，就是将 `Bar.prototype` 关联到 `Foo.prototype` 上。
+
+“原型继承” 的实现过程中，常常会产生一些个常见的错误：
+
+```js
+Bar.prototype = Foo.prototype;
+
+Bar.prototype = new Foo();
+```
+
+就 `Bar.prototype = Foo.prototype;` 而言，关键的问题是你一旦往 `Bar.prototype` 上新增或删除某个属性或方法，这都会影响到所有 “继承” 自 `Foo` 的类，或者实例化后的实例。如果你发现你不得不这么做的时候，不妨想想是否 `Bar` 有存在的必要？直接用 `Foo` 不就完事了？
+
+而 `Bar.prototype = new Foo();` 虽然看上去好像没什么大问题，但一旦函数 `Foo` 写了一些副作用的时候(日志输入、装改改变、指定`return`返回值、**在 this 上添加新的属性或方法**…)，一旦你调用了 “构造函数”，这些副作用就会产生意想不到的问题。
+
+当然，`Object.create(…)` 也不是没缺点 —— 它会创建一个新的对象，消耗一定的资源。不过在ES6之前，`__proto__` 虽然能访问到原型对象，但并没有标准化，因此 `Object.create(…)` 是唯一靠谱的解决方案。不过在 ES6 来临时，不仅规范化了 `__proto__`，而且还提供了一个标准的API `Object.setPrototypeOf(…)`，帮助实现 “原型继承”：
+
+```js
+Object.setPrototypeOf(Bar.prototype, Foo.prototype);
+```
+
+如果忽略 `Object.create(…)` 掉性能上的一些影响(替换掉旧的对象会被垃圾回收掉)，它其实更为简洁，但从语义角度来看，`Object.setPrototypeOf(…)` 最终会胜出也说不定。
+
+### 检查“类”的关系(Inspecting "Class" Relationships)
