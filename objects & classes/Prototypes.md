@@ -296,3 +296,96 @@ Object.setPrototypeOf(Bar.prototype, Foo.prototype);
 如果忽略 `Object.create(…)` 掉性能上的一些影响(替换掉旧的对象会被垃圾回收掉)，它其实更为简洁，但从语义角度来看，`Object.setPrototypeOf(…)` 最终会胜出也说不定。
 
 ### 检查“类”的关系(Inspecting "Class" Relationships)
+在JS中，如果你想要检查一个对象是否代理了另外一个对象，使用 `instanceof` 关键字检查所谓某个对象是否是某个类的实例，通常被称为 *内检(introspection / reflection)*，看山去是一个常见的方案：
+
+```js
+function Foo () {}
+
+Foo.prototype.name = 'Foo Function';
+var a = new Foo();
+
+a instanceof Foo; // true
+```
+
+👆`instanceof` 运算符左侧接受一个对象，右侧接受一个函数；但它并不是的去判断某个对象是否是某个函数的“实例”，而是按照算法去遍历左侧 `a` 的原型链，然后看看其中是否有一个任意的原型对象，指向的是 `Foo.prototype`。
+
+因此，如果你想要检查两个对象直接是否存在代理关系，`instanceof` 显然不能满足需求。
+
+**Note**：用内置的 `bind(…)` 方法进行 `this` 强绑定返回的函数没有 `prototype` 属性，这也意味着使用 `instanceof` 检查用此类函数“实例化”的对象时，其实并不是检查通过 `bind(…)` 绑定的返回的原函数，而是 `bind(…)` 之前的原函数：
+
+```js
+var obj1 = {
+  fn: function (name) { this.name = name; }
+};
+
+var obj2 = {
+  name: 'object'
+};
+
+var bindFn = obj1.fn.bind(obj2);
+
+var a1 = new bindFn();
+
+a1 instanceof bindFn; // true
+a1 instanceof obj1.fn; // true
+
+bindFn.prototype; // undefined
+obj1.fn.prototype.isPrototypeOf(a1); // true
+```
+
+👇这段代码用一种 “神奇” 的办法试着解决检查两个对象直接是否存在关联：
+
+```js
+function isRelatedTo(o1, o2) {
+  function F () {}
+  F.prototype = o2;
+  return o1 instanceof F;
+}
+
+var c = {};
+var b = Object.create(c);
+
+isRelatedTo(b, c); // true
+```
+
+👆问题不是在于能不能检查出两个对象直接的关联，而是归根于在 JS 中一定要去模拟出类以及类相应的语法上。比如上面例子使用的 `instanceof` 间接揭示的语义。
+
+另一种检查的办法是使用 `isPrototype(…)` 内置方法：
+
+```js
+Foo.prototype.isPrototypeOf(a); // true
+```
+
+`Foo.prototype` 虽然是一个对象，并且参数也传递的是一个对象，看上去好像完成了两个对象是否关联的检查，但 `isPrototypeOf(…)` 的本质依然是在问：`a` 的原型链中，是否存在 `Foo.prototype`。
+
+普通对象都能引用 `isPrototypeOf(…)`，因此用它来代替上面使用的 `isRelatedTo` 再好不过：
+
+```js
+c.isPrototypeOf(b); // true
+```
+
+如果要获取 `prototype`，在ES5中早已提供了支持：
+
+```js
+Object.getPrototypeOf(a);
+
+Object.getPrototypeOf(a) === Foo.prototype; // true
+```
+
+在ES6之前，`__proto__`(社区为`__`专门创建了一个术语叫做 dunder，因此 `__proto__` 又被称为 dunder proto) 是一个非标准的实现(虽然大部分浏览器都支持)，直到ES6来临。虽然其看上去是一个属性，但正确的理解方式应该是将其理解为 getter/setter，比如下面👇这样：
+
+```js
+Object.defineProperty(Object.prototype, '__proto__', {
+  get: function () {
+    return Object.getPrototypeOf(this);
+  },
+  set: function (o) {
+    Object.setPrototypeOf(this, o);
+    return 0;
+  }
+})
+```
+
+换句话说，当我们直接使用 `__proto__` 的时候，其实是调用了 `Object.getPrototypeOf(…)`。而为其赋值的时候，调用的是 `Object.setPrototypeOf(…)`。这里强调一点，虽然 `__proto__` 可以改变其值，但最好别随意更变，将其视为 **read-only** 对大家都好。
+
+## 对象连接(Object Links)
