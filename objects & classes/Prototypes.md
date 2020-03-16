@@ -389,3 +389,96 @@ Object.defineProperty(Object.prototype, '__proto__', {
 换句话说，当我们直接使用 `__proto__` 的时候，其实是调用了 `Object.getPrototypeOf(…)`。而为其赋值的时候，调用的是 `Object.setPrototypeOf(…)`。这里强调一点，虽然 `__proto__` 可以改变其值，但最好别随意更变，将其视为 **read-only** 对大家都好。
 
 ## 对象连接(Object Links)
+`[[Prototype]]` 机制的本质就是对象内部存在一个能引用其他对象的连接。这个连接存在的意义就是当对象中不存在某个属性或方法的时候，能通过一层层的查找机制，引用其他对象中的同名属性或方法，这样 *对象的原型对象的原型对象…* 的一系列连接被称为 “原型链(prototype chain)”。
+
+### `Create()`ing link
+为什么我们作为 JS 的开发者一定要绕来绕去，非得使用什么所谓的原型继承，然后把自己绕晕进去呢？有什么好的办法能让我们既使用了对象连接的优势，又避免了被伪装类而产生的错综复杂的关系所困扰呢？英雄是 `Object.create(…)`：
+
+```js
+var foo = {
+  something: function () {
+    console.log('Tell some stories');
+  }
+}
+
+var bar = Object.create(foo);
+
+bar.something(); // "Tell some stories"
+```
+
+👆使用 `Object.create(…)` 让我们能够使用 “原型链” 机制带来的好处 —— 直接在 `bar` 调用自身并不存在的方法 `bar.something();`，并且不用被 `new`、`.prototype`、`.constructor` 等相关问题所困扰。
+
+**Note**：`Object.create(null)` 会创建一个被俗称为 *字典(dictionaries)* 的对象 —— 它是一个干净的空对象，没有代理任何其他的对象，因而对其使用 `instanceof` 运算符的结果总会返回 `false`。它做为一个纯净的数据存储器在合适不过了，因为它不会产生因为原型链代理而来的副作用。
+
+#### `Object.create()` Polyfilled
+作为 ES5 规范提出来的 `Object.create()`，若要兼容之前的环境，通常采用简单的 **部分polyfill** 的做法：
+
+```js
+if (!Object.create) {
+  Object.create = function (o) {
+    function F () {}
+    F.prototype = o;
+    return new F();
+  }
+}
+```
+
+👆上面采用取巧的办法，利用 `new` 的运行机制，将一个用完即抛的函数的 `prototype` 属性指向目标对象 `o`，而后通过 `new F();` 返回一个原型链上绑定了 `o` 的新对象。
+
+但需要注意的是，标准的 `Object.create(…)` 的实现远不止这些，并且并不能完全被 ployfill：
+
+```js
+var anotherObj = {
+  a: 2
+};
+
+var myObj = Object.create(anotherObj, {
+  b: {
+    enumerable: false,
+    writable: true,
+    configurable: false,
+    value: 3
+  },
+  c: {
+    enumerable: true,
+    writable: false,
+    configurable: false,
+    value: 4
+  }
+});
+
+myObj.hasOwnProperty('a'); // false
+myObj.hasOwnProperty('b'); // true
+myObj.hasOwnProperty('c'); // true
+
+myObj.a; // 2
+myObj.b; // 3
+myObj.c; // 4
+
+myObj; // {c: 4, b: 3}
+```
+
+`Object.create(…)` 的第二个参数接受一个对象，这个对象会被添加到新创建的对象中，并且能使用对象属性描述器定义每个属性 —— 这是没办法被 ployfill 的部分。
+
+虽然通常我们使用 `Object.create(…)` 时，只会用到 polyfill 后的子级的功能，但是有的开发者持有这样一种观念：如果一个新的特性不能被全方位无死角的 ployfill，那就不要 polyfill，而是自定义一个不同名称的 utility：
+
+```js
+function createAndLinkObject (o) {
+    function F () {}
+    F.prototype = o;
+    return new F();
+  }
+}
+
+var anotherObj = {
+  a: 2
+};
+
+var myObj = createAndLinkObject(anotherObj);
+
+myObj.a; // 2
+```
+
+虽然书中作者认为👆这是一种狭隘的观点(narrower perspective)，但最终怎么选，还是要我们自定拿主意。
+
+### 联接 =? 退路(Links As Fallbacks?)
