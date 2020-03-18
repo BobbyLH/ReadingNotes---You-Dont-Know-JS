@@ -481,4 +481,54 @@ myObj.a; // 2
 
 虽然书中作者认为👆这是一种狭隘的观点(narrower perspective)，但最终怎么选，还是要我们自定拿主意。
 
-### 联接 =? 退路(Links As Fallbacks?)
+### 备胎？(Links As Fallbacks?)
+把 `[[Prototype]]` 的工作方式，当做某个对象 “缺失” 某个属性或者方式时，用来充当缺省方案(“备胎”)，会让你觉着是一条 “妙计”：
+
+```js
+var anotherObj = {
+  cool: function () {
+    console.log('cool!');
+  }
+};
+
+var myObj = Object.create(anotherObj);
+
+myObj.cool(); // "cool!"
+```
+
+👆 `myObj.cool();` 之所以能正常工作，都要归功于 `[[Prototype]]`，但如果你是存心这样做 —— 将 `anotherObj` 作为 `myObj` 的 “备胎”，以便在 `myObj` 上引用某些其本身不存在的方法或属性。这样的 “魔法” 不仅难懂，更难维护。虽然并不是说这种做法完全不可取，但确实在JS中，不是一种常见且符合习惯的方式。
+
+**Note**：ES6 中新增的 `proxy` 能够更好的处理这种 *“404(method/property not found)”* 的问题，后面会讲到。
+
+一种比较合理的利用 `[[Prototype]]` 的优势，又让你的代码看起来更合理的的写法：
+
+```js
+var anotherObj = {
+  cool: function () {
+    console.log('cool!');
+  }
+};
+
+var myObj = Object.create(anotherObj);
+
+myObj.doCool = function () {
+  this.cool();
+};
+
+myObj.doCool(); // "cool!"
+```
+
+`myObj.doCool();` 是确确实实存在于 `myObj` 上的方法，而其内部的实现则是利用了 `[[Prototype]]` 的 **代理设计模式(delegation design pattern)**，用 `this` 指向 `myObj`，最终通过原型链调用 `anotherObj.cool()`。
+
+总体来看，将代理模式包裹在方法的内部来实现比直接暴露整个API，要更清晰易懂。
+
+## 回顾(Review)
+`[[Prototype]]` 的机制，就是配合内部实现的 `[[Get]]` 操作，当访问某个对象上不存在的属性或方法时，层层遍历 “原型链(prototype chain)”，直至最顶层的 `Object.prototype` 上。若是在某层原型链中找到了则直接返回，若是没有找到，则返回 `undefined`。
+
+最顶层的 `Object.prototype` 包含了很多内置的昂发，比如 `toString()`、`valueOf()`……这也是为什么所有的对象都能访问到这些方法(`Object.create(null)` 创建的对象除外)。
+
+将两个对象关联起来最常用的方式是使用关键字 `new` —— 通过 `.prototype` 属性，将一个对象关联到这个新创建的对象上。函数调用前加上 `new` 通常被称为 “构造(constructor)”，尽管其本质上没有发生传统的面向类语言实例化某个类的那种过程。
+
+虽然 JS 中类的实例化和类的继承都像模像样，但它缺少最为关键的复制拷贝的动作，取而代之的是通过原型链将对象直接连接起来。因此，当了解到其本质后，所有的关于面向对象的术语在JS中看上去都怪怪的，除非你非得强迫自己在心理上使用这种描述模型。
+
+“代理(delegation)” 可能是更为恰当的术语 —— 因为在JS中没有复制拷贝，只有**连接(links)**。
