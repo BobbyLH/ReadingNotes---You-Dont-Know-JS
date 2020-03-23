@@ -17,3 +17,5 @@
 - [“类”与对象的混合](/objects%20%26%20classes/Mixing%20Class.md) (Mixing Class)
 
 - [原型](/objects%20%26%20classes/Prototypes.md) (Prototypes)
+
+- [行为代理](/objects%20%26%20classes/Behavior%20Delegation.md) (Behavior Delegation)
