@@ -19,12 +19,12 @@
 
 - [作用域和闭包](/scope%20%26%20closures/README.md) (scope & closures)
 
-- [对象和类](/objects%20%26%20classes/README.md) (objects & classes) --- 进行中
+- [对象和类](/objects%20%26%20classes/README.md) (objects & classes) --- 整理中
 
 - [类型和语法](/types%20%26%20grammar/README.md) (type & grammar)
 
-- [异步和优化](/async%20%26%20performance/README.md) (async & performance) --- 整理中
+- [异步和优化](/async%20%26%20performance/README.md) (async & performance) --- 进行中
 
-- [ES6+](/es6%20%26%20beyond/README.md) (ES6 & Beyond) --- 未开始
+- [ES6+](/es6%20%26%20beyond/README.md) (ES6 & Beyond) --- 进行中
 
-**News**：目前该书正在在线编辑第二版，应该新增加了不少内容，待完成后也会同步至读书笔记中，敬请期待
+**News**：目前该书正在在线编辑第二版，新增加了不少内容，待完成后也会同步至读书笔记中，敬请期待
