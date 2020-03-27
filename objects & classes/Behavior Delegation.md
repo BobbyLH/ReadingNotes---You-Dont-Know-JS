@@ -99,3 +99,65 @@ a.__proto__ = b; // TypeError
 ![相互代理](./assets/behavior_delegation_mutual_delegation.png)
 
 #### Debugged
+大体上讲，JS 规范并没有强制要求各个浏览器厂商的 _开发者工具(developer tools)_ 应该按照某个规范来实现，因此每个浏览器都会有大体上差不多，但充满了各种微妙区别的实现机制。就比如 "class constructor" 风格的代码，在 Chrome 和 Firefox 的 Developer Tools 中各有不同：
+
+```js
+function Foo () {}
+
+var a1 = new Foo();
+
+a1;
+// Foo {}  --- chrome
+// Object { } --- firefox
+```
+
+ubuntu19.10 - firefox - 74.0 (64-bit)：
+
+![firefox](./assets/behavior_delegation_debug_firefox.png)
+
+ubuntu19.10 - chrome - 80.0.3987.116 (Official Build) (64-bit)：
+
+![chrome](./assets/behavior_delegation_debug_chrome.png)
+
+👆 Chrome 本质上是在说： `a1` 是由名为 `Foo` 的函数创建的一个空对象；而 Firefox 则认为 `a1` 是一个由 `Object` 构造函数创建的空对象。这其中的区别在于前者会主动的跟踪创建该对象的真实构造函数的具体信息，而后者采用取巧的方案：即所有的对象追根溯源，本质上都是由 `Object` 构造函数创建，因此不用费力去跟踪额外的信息。
+
+在 Chrome 的开发者工具的控制台中，接着输入下面的代码：
+
+```js
+a1.constructor; // Foo () {}
+
+a1.constructor.name; // "Foo"
+```
+
+👆 好像 `a1.constructor.name;` 结果和 `a1;` 的输出一致，都正确的指向了构造函数 `Foo`，但这是真的吗？：
+
+```js
+Foo.prototype.constructor = function Gotcha();
+
+a1.constructor; // Gotcha () {}
+
+a1.constructor.name; // "Gotcha"
+
+a1; // Foo {}
+```
+
+此时即使 `a1.constructor.name;` 已经正确的返回了 `"Gotcha"`，但 `a1;` 依旧输出了 `Foo {}` —— 这个bug的存在不是一天两天了，也不知道之后是否会修复，不过别着急，再看看 OLOO 设计模式是否受到影响：
+
+```js
+var Foo = {};
+
+var a1 = Object.create(Foo);
+
+a1; // {}
+
+Object.defineProperty(Foo, 'constructor', {
+	enumerable: false,
+	value: function Gotcha() {}
+});
+
+a1; // Gotcha {}
+```
+
+你可能会说，Chrome 这不是吃力不讨好么，本来这并不是 JS 规范的要求，结果还弄出了bug。但抛开bug来说，如果你彻底放弃使用类的设计模式，投向OLOO的怀抱，那你也不会纠结 *到底谁才是这个对象的构造函数* 这样一个毫无意义的问题了！
+
+### 心理模式的较量(Mental Models Compared)
