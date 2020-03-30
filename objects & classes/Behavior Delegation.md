@@ -160,4 +160,83 @@ a1; // Gotcha {}
 
 你可能会说，Chrome 这不是吃力不讨好么，本来这并不是 JS 规范的要求，结果还弄出了bug。但抛开bug来说，如果你彻底放弃使用类的设计模式，投向OLOO的怀抱，那你也不会纠结 *到底谁才是这个对象的构造函数* 这样一个毫无意义的问题了！
 
-### 心理模式的较量(Mental Models Compared)
+### 思维模式的较量(Mental Models Compared)
+对于 “类” 和 “代理” 两种不同的设计模式，至少从理论上能区别出其中的差异了。接下去不妨从思维模式的角度来看看这两者的不同之处：
+
+```js
+function Foo (who) {
+	this.me = who;
+}
+
+Foo.prototype.identify = function () {
+	return 'I am ' + this.me;
+}
+
+function Bar (who) {
+	Foo.call(this, who);
+}
+
+Bar.prototype = Object.create(Foo.prototype);
+
+Bar.prototype.speak = function () {
+	console.log('hello, ' + this.identify() + '.');
+}
+
+var b1 = new Bar('b1');
+var b2 = new Bar('b2');
+
+b1.speak(); // "hello, I am b1."
+b2.speak(); // "hello, I am b2."
+```
+
+👆经典的面向对象(OO)风格的代码，父类是 `Foo`，子类是 `Bar`，两个实例化的对象分别是 `b1` 和 `b2`，它们能通过原型链的机制访问 `Bar.prototype` 和 `Foo.prototype` —— 没什么特别之处。
+
+如果换成是 OLOO 风格的代码，则只有利用原型查找机制，形成对象之间的关联，而没有涉及到乱七八糟的诸如 构造函数、原型，以及 `new` 的调用等概念：
+
+```js
+var Foo = {
+	init: function (who) {
+		this.me = who;
+	},
+	identify: function () {
+		return 'I am ' + this.me;
+	}
+};
+
+var Bar = Object.create(Foo);
+
+Bar.speak = function () {
+	console.log('hello, ' + this.identify() + '.');
+}
+
+var b1 = Object.create(Bar);
+b1.init('b1');
+
+var b2 = Object.create(Bar);
+b2.init('b2');
+
+b1.speak(); // "hello, I am b1."
+b2.speak(); // "hello, I am b2."
+```
+
+你也许会问，既然两者都能实现对应的功能，并且OLOO的模式看上去更简洁，那是否意味着 OLOO 就是更好的选择呢？
+
+别着急回答，先贴两张原书的图来看看实现它们的底层思维模式是怎么做的：
+
+首先是面向对象的思维模式：
+
+![思维模式之面向对象](./assets/behavior_delegation_mental_model_oo.png)
+
+这些个关系复杂不？实际上把这些关系弄懂对个人也是有很多好处的，比如对于为什么每个函数都能调用 `call(…)`、`apply(…)`、`bind(…)` 这些方法其实是因为所有的函数本质上都是一个对象，因此这些 函数-对象 都能通过原型链访问到 `Function.prototype` 原型对象，在其上就定义了这些个默认的方法。
+
+下面还有一个简化版，其实不看也罢：
+
+![思维模式之面向对象简化版](./assets/behavior_delegation_mental_model_oo_simple.png)
+
+重点来了，看看 OLOO 的思维模型：
+
+![思维模式之OLOO](./assets/behavior_delegation_mental_model_oloo.png)
+
+👆这才是简单到没朋友的关系，清晰明了，只有对象和代理关系。所以，如果你不想陷入各种说不清道不明的 “复杂关系” 的话，OLOO设计模式是不二之选。
+
+## 类 vs. 对象(Classes vs. Objects)
