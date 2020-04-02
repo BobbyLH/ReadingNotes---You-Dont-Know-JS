@@ -240,3 +240,151 @@ b2.speak(); // "hello, I am b2."
 👆这才是简单到没朋友的关系，清晰明了，只有对象和代理关系。所以，如果你不想陷入各种说不清道不明的 “复杂关系” 的话，OLOO设计模式是不二之选。
 
 ## 类 vs. 对象(Classes vs. Objects)
+组件的开发在前端领域来说是家常便饭，作者用这个现实的例子，分别使用 OO 和 OLOO 两种不同的设计模式完成了同样的工作 —— 一个 `Button` 组件的开发。
+
+**Note**：为了方便实验，将书中部分采用的JQuery语法转换成了原生的语法，这样即便没有事先加载这个框架，也可以在控制台就能出效果。
+
+### "Classes"组件(Widget "Classes")
+```js
+// parent class
+function Widget (width, height) {
+	this.width = width || 50;
+	this.height = height || 50;
+	this.$elem = null;
+}
+
+Widget.prototype.render = function ($where) {
+	if (this.$elem) {
+		this.$elem.style.width = this.width + 'px';
+		this.$elem.style.height = this.height + 'px';
+		$where.appendChild(this.$elem);
+	}
+}
+
+function Button (width, height, label) {
+	Widget.call(this, width, height);
+	this.label = label || 'Button';
+	this.$elem = document.createElement('button');
+	this.$elem.innerText = this.label;
+}
+
+Button.prototype = Object.create(Widget.prototype);
+
+Button.prototype.render = function ($where) {
+	Widget.prototype.render.call(this, $where);
+	this.$elem.onclick = this.onClick.bind(this);
+}
+
+Button.prototype.onClick = function (evt) {
+	console.log('Button ' + this.label + ' clicked!');
+}
+
+const $body = $('body');
+const btn1 = new Button(125, 30, "Hello");
+const btn2 = new Button(150, 40, "World");
+
+btn1.render($body);
+btn2.render($body);
+```
+
+作者对于 显示的伪装多态 `Widget.prototype.render.call(this, $where);` 的语法感到深痛恶觉，也指出关于 `btn1.render(…)` 方法的其本质上并没有替换它，而是在其原先 “父类(Widget)” 的同名方法中增加了关于 Button 的一些特殊行为罢了。
+
+#### ES6 `class` 语法糖(ES6 `class` sugar)
+```js
+class Widget {
+	constructor (width, height) {
+		this.width = width || 50;
+		this.height = height || 50;
+		this.$elem = null;
+	}
+
+	render ($where) {
+		if (this.$elem) {
+			this.$elem.style.width = this.width + 'px';
+			this.$elem.style.height = this.height + 'px';
+			$where.appendChild(this.$elem);
+		}
+	}
+}
+
+class Button extends Widget {
+	constructor (width, height, label) {
+		super(width, height);
+		this.label = label || 'Button';
+		this.$elem = document.createElement('button');
+		this.$elem.innerText = this.label;
+	}
+
+	render ($where) {
+		super.render($where);
+		this.$elem.onclick = this.onClick.bind(this);
+	}
+
+	onClick (evt) {
+		console.log('Button ' + this.label + ' clicked!');
+	}
+}
+
+const $body = $('body');
+const btn1 = new Button(125, 30, "Hello");
+const btn2 = new Button(150, 40, "World");
+
+btn1.render($body);
+btn2.render($body);
+```
+
+毫无疑问的是，👆上面经过ES6语法糖的包装后，看上去好了很多。但千万别被其华美的外表所迷惑，因为语法糖总归还是一层皮，其实现的本质依然是原型链的机制，你依然要为此付 “智商税(mental tax)”。
+
+### 代理组件对象(Delegating Widget Objects)
+```js
+const Widget = {
+	init: function (width, height) {
+		this.width = width || 50;
+		this.height = height || 50;
+		this.$elem = null;
+	},
+	insert: function ($where) {
+		if (this.$elem) {
+			this.$elem.style.width = this.width + 'px';
+			this.$elem.style.height = this.height + 'px';
+			$where.appendChild(this.$elem);
+		}
+	}
+};
+
+const Button = Object.create(Widget);
+
+Button.setup = function (width, height, label) {
+	this.init(width, height);
+	this.label = label || 'Button';
+	this.$elem = document.createElement('button');
+	this.$elem.innerText = this.label;
+};
+
+Button.build = function ($where) {
+	this.insert($where);
+	this.$elem.onclick = this.onClick.bind(this);
+};
+
+Button.onClick = function (evt) {
+	console.log('Button ' + this.label + ' clicked!');
+};
+
+const $body = $('body');
+const btn1 = Object.create( Button );
+btn1.setup(125, 30, 'hello');
+
+const btn2 = Object.create( Button );
+btn2.setup(150, 30, 'world');
+
+btn1.build($body);
+btn2.build($body);
+```
+
+👆 `Widget` 是一个提供了一些通用方法和能力的对象，而 `Button` 也仅仅是一个关联到了 `Widget` 的更为普通的对象。
+
+OO 模式中的 `render` 方法，到这里被命名为 `insert` 和 `build` 方法；而所谓的“实例化”的过程，也被拆解为了 `init` 和 `setup` 方法，没有了 `new` 和 `prototype` 的坤然，更简单、更语义化、更易于维护。
+
+还有个不得不说的地方，`const btn1 = new Button(…)` 被拆解成了 `const btn1 = Object.create(Button);` 和 `btn1.setup(…)` —— 这看上去好像是更麻烦了，其实这也其优势所在 —— 若你把实例化的任务拆分的更细致，变成了构建和初始化两步，那么你就能创建一个存放实例的池，而在需要初始化的地方才将实例取出来进行初始化的动作。
+
+## 更简单的设计(Simpler Design)
