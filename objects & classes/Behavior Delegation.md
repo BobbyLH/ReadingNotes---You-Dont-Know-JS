@@ -388,3 +388,113 @@ OO 模式中的 `render` 方法，到这里被命名为 `insert` 和 `build` 方
 还有个不得不说的地方，`const btn1 = new Button(…)` 被拆解成了 `const btn1 = Object.create(Button);` 和 `btn1.setup(…)` —— 这看上去好像是更麻烦了，其实这也其优势所在 —— 若你把实例化的任务拆分的更细致，变成了构建和初始化两步，那么你就能创建一个存放实例的池，而在需要初始化的地方才将实例取出来进行初始化的动作。
 
 ## 更简单的设计(Simpler Design)
+除了组件的开发，面对实际的业务需求，OLOO是否依然能保持它的优势，让代码更简洁易懂，易于维护呢？拿一个常见的登陆验证业务逻辑过程来看，如果是传统的面向类的设计模式，我们一般会拆分成一个父类 `Controller`，两个子类 `LoginController` 和 `AuthController` 继承于它：
+
+```js
+// 父类 Controller
+function Controller () {
+	this.errors = [];
+}
+
+Controller.prototype.showDialog = function (title, msg) {
+	window.alert(title + ': ' + msg);
+};
+
+Controller.prototype.success = function (msg) {
+	this.showDialog('Success', msg);
+};
+
+Controller.prototype.failure = function (err) {
+	this.errors.push(err);
+	this.showDialog('Error', err);
+};
+```
+
+```js
+// 子类 登陆
+function LoginController () {
+	Controller.call(this);
+}
+
+LoginController.prototype = Object.create(Controller.prototype);
+LoginController.prototype.getUser = function () {
+	return document.getElementById('login_username').value();
+};
+LoginController.prototype.getPwd = function () {
+	return document.getElementById('login_password').value();
+};
+LoginController.prototype.validateEntry = function (user, pwd) {
+	user = user || this.getUser();
+	pwd = pwd || this.getPwd();
+
+	if (!(user && pwd)) {
+		return this.failure('Please enter a username & password!');
+	} else if (pwd.length < 5) {
+		return this.failure('Password must be 5+ characters!');
+	}
+	return true;
+};
+
+LoginController.prototype.failure = function (err) {
+	Controller.prototype.failure.call(this, 'Login invalid: ' + err);
+};
+```
+
+```js
+function AuthController (login) {
+	Controller.call(this);
+	this.login = login;
+}
+
+AuthController.prototype = Object.create(Controller.prototype);
+
+AuthController.prototype.server = function (url, data) {
+	return new Promise((resolve, reject) => {
+		const xhr =  new XMLHttpRequest();
+		xhr.open('post', url);
+		xhr.setRequestHeader('Content-type', 'application/json');
+		xhr.send(JSON.stringify(data));
+		xhr.onreadystatechange = function () {
+			if (xhr.readyState === 4) {
+				if (xhr.status === 200) {
+					return resolve(JSON.parse(xhr.responseText));
+				}
+				reject('server error!');
+			}
+		}
+	});
+}
+
+AuthController.prototype.checkAuth = function () {
+	const user = this.login.getUser();
+	const pwd = this.login.getPwd();
+
+	if (this.login.validateEntry(user, pwd)) {
+		this.server('/login', {
+			user,
+			pwd
+		})
+		.then(this.success.bind(this))
+		.catch(this.failure.bind(this));
+	}
+};
+
+AuthController.prototype.success = function (msg) {
+	Controller.prototype.success.call(this, msg);
+};
+
+AuthController.prototype.failure = function (err) {
+	Controller.prototype.failure.call(this, err);
+};
+```
+
+```js
+const auth = new AuthController(
+	new LoginController()
+);
+auth.checkAuth();
+```
+
+👆 `AuthController` 需要一个 `LoginController` 实例来实现部分功能，而后你可能会冒出一个将 `AuthController` 继承自 `LoginController` 的想法 —— 很诱人，但无论是 `AuthController` 还是 `LoginController`，它们处理的都是特定的业务，“分而治之” 而不是揉成一个大球，而后各自继承自父类 `Controller`，这显然更优雅也更利于维护。
+
+### 去类化(De-class-ified)
