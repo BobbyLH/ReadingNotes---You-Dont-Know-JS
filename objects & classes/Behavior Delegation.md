@@ -388,7 +388,9 @@ OO 模式中的 `render` 方法，到这里被命名为 `insert` 和 `build` 方
 还有个不得不说的地方，`const btn1 = new Button(…)` 被拆解成了 `const btn1 = Object.create(Button);` 和 `btn1.setup(…)` —— 这看上去好像是更麻烦了，其实这也其优势所在 —— 若你把实例化的任务拆分的更细致，变成了构建和初始化两步，那么你就能创建一个存放实例的池，而在需要初始化的地方才将实例取出来进行初始化的动作。
 
 ## 更简单的设计(Simpler Design)
-除了组件的开发，面对实际的业务需求，OLOO是否依然能保持它的优势，让代码更简洁易懂，易于维护呢？拿一个常见的登陆验证业务逻辑过程来看，如果是传统的面向类的设计模式，我们一般会拆分成一个父类 `Controller`，两个子类 `LoginController` 和 `AuthController` 继承于它：
+除了组件的开发，面对实际的业务需求，OLOO 是否依然能保持它的优势，让代码更简洁易懂，易于维护呢？
+
+拿一个常见的登陆验证业务逻辑过程来看，如果是传统的面向类的设计模式，我们一般会拆分成一个父类 `Controller`，两个子类 `LoginController` 和 `AuthController` 继承于它：
 
 ```js
 // 父类 Controller
@@ -418,10 +420,10 @@ function LoginController () {
 
 LoginController.prototype = Object.create(Controller.prototype);
 LoginController.prototype.getUser = function () {
-	return document.getElementById('login_username').value();
+	return document.getElementById('login_username').value;
 };
 LoginController.prototype.getPwd = function () {
-	return document.getElementById('login_password').value();
+	return document.getElementById('login_password').value;
 };
 LoginController.prototype.validateEntry = function (user, pwd) {
 	user = user || this.getUser();
@@ -441,6 +443,7 @@ LoginController.prototype.failure = function (err) {
 ```
 
 ```js
+// 子类 校验
 function AuthController (login) {
 	Controller.call(this);
 	this.login = login;
@@ -450,7 +453,7 @@ AuthController.prototype = Object.create(Controller.prototype);
 
 AuthController.prototype.server = function (url, data) {
 	return new Promise((resolve, reject) => {
-		const xhr =  new XMLHttpRequest();
+		const xhr = new XMLHttpRequest();
 		xhr.open('post', url);
 		xhr.setRequestHeader('Content-type', 'application/json');
 		xhr.send(JSON.stringify(data));
@@ -498,3 +501,99 @@ auth.checkAuth();
 👆 `AuthController` 需要一个 `LoginController` 实例来实现部分功能，而后你可能会冒出一个将 `AuthController` 继承自 `LoginController` 的想法 —— 很诱人，但无论是 `AuthController` 还是 `LoginController`，它们处理的都是特定的业务，“分而治之” 而不是揉成一个大球，而后各自继承自父类 `Controller`，这显然更优雅也更利于维护。
 
 ### 去类化(De-class-ified)
+如果用 OLOO 设计模式，上面的代码可以简化成这样：
+
+```js
+const LoginController = {
+	errors: [],
+	getUser: function() {
+		return document.getElementById("login_username").value;
+	},
+	getPwd: function() {
+		return document.getElementById("login_password").value;
+	},
+	validateEntry: function(user,pwd) {
+		user = user || this.getUser();
+		pwd = pwd || this.getPwd();
+
+		if (!(user && pwd)) {
+			return this.failure("Please enter a username & password!");
+		}
+		else if (pwd.length < 5) {
+			return this.failure("Password must be 5+ characters!");
+		}
+
+		return true;
+	},
+	showDialog: function (title, msg) {
+		window.alert(title + ': ' + msg);
+	};,
+	failure: function(err) {
+		this.errors.push(err);
+		this.showDialog("Error", "Login invalid: " + err);
+	}
+};
+```
+
+```js
+// 让 `AuthController` 代理 `LoginController`
+const AuthController = Object.create(LoginController);
+
+AuthController.errors = [];
+AuthController.checkAuth = function() {
+	const user = this.getUser();
+	const pw = this.getPwd();
+
+	if (this.validateEntry(user, pwd)) {
+		this.server("/check-auth", {
+			user,
+			pwd
+		})
+		.then(this.accepted.bind(this))
+		.fail(this.rejected.bind(this));
+	}
+};
+AuthController.server = function(url,data) {
+	return new Promise((resolve, reject) => {
+		const xhr = new XMLHttpRequest();
+		xhr.open('post', url);
+		xhr.setRequestHeader('Content-type', 'application/json');
+		xhr.send(JSON.stringify(data));
+		xhr.onreadystatechange = function () {
+			if (xhr.readyState === 4) {
+				if (xhr.status === 200) {
+					return resolve(JSON.parse(xhr.responseText));
+				}
+				reject('server error!');
+			}
+		}
+	});
+};
+AuthController.accepted = function() {
+	this.showDialog("Success", "Authenticated!")
+};
+AuthController.rejected = function(err) {
+	this.failure("Auth Failed: " + err);
+};
+```
+
+因为 `AuthController` 只是一个对象，因此想要使用登陆校验的逻辑，只需要简单的调用 `AuthController.checkAuth()` 即可，根本不用实例化。
+
+而当你想要实现多个校验控制对象的时候，也只需要简单的用 `Object.create(…)` 这个内置的 API 即可实现：
+
+```js
+const controller1 = Object.create(AuthController);
+const controller2 = Object.create(AuthController);
+```
+
+对比面向类的设计模式，OLOO 在实现这个登录的业务场景有以下优势：
+
+1. 只有两个实体对象，而不是三个；
+
+2. 没有复杂的父子类的层级关系，只有简单的对象和对象直接的代理，且无论是用 `AuthController` 关联 `LoginController`，还是反过来，都是可以的；
+
+3. 无论是 `AuthController` 亦或 `LoginController` 都只需关心自身的实现，不用操心会被用在不同的地方因此需要做兼容处理，比如在面向类的设计模式中实现的父类 `Controller`，就要兼容子类可能遇到的各种情况；
+
+4. 让代码具有更好的语义化，比如在面向类设计模式中实现的 `success(…)` 和 `failure(…)` 都需要利用显示的伪多态来满足需求，而在 OLOO 中，`AuthController` 自己实现了更具有描述性的 `accepted()` 和 `rejected(…)`。
+
+## 更优雅的语法(Nicer Syntax)
