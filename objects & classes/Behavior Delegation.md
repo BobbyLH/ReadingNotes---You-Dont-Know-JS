@@ -504,7 +504,7 @@ auth.checkAuth();
 如果用 OLOO 设计模式，上面的代码可以简化成这样：
 
 ```js
-const LoginController = {
+var LoginController = {
 	errors: [],
 	getUser: function() {
 		return document.getElementById("login_username").value;
@@ -537,7 +537,7 @@ const LoginController = {
 
 ```js
 // 让 `AuthController` 代理 `LoginController`
-const AuthController = Object.create(LoginController);
+var AuthController = Object.create(LoginController);
 
 AuthController.errors = [];
 AuthController.checkAuth = function() {
@@ -597,3 +597,95 @@ const controller2 = Object.create(AuthController);
 4. 让代码具有更好的语义化，比如在面向类设计模式中实现的 `success(…)` 和 `failure(…)` 都需要利用显示的伪多态来满足需求，而在 OLOO 中，`AuthController` 自己实现了更具有描述性的 `accepted()` 和 `rejected(…)`。
 
 ## 更优雅的语法(Nicer Syntax)
+ES6 的 `class` 有如此大的魅力能吸引众多的开发者以及一些第三方库都趋之若鹜的原因，很大一部分来自于它简洁精炼的语法：
+
+```js
+class Foo {
+	methodName () {}
+}
+```
+
+👆 `methodName` 省略了关键字 `function`，并且避免了 ES5 中冗余的八股 `Foo.prototype.methodName`。
+
+当然 OLOO 的设计模式也能使用更简洁的语法：
+
+```js
+var LoginController = {
+	errors: [],
+	getUser() {
+		// ……
+	},
+	getPwd() {
+		// ……
+	}
+	// ……
+};
+```
+
+👆和 ES6 的 `class` 相比，唯一多出的部分是需要在每个属性后添加逗号 `,` 作为分隔。
+
+使用新的API `Object.setPrototypeOf(……)` 还能很方便的改动某个对象的原型链：
+
+```js
+var AuthController = {
+	errors: [],
+	checkAuth() {
+		// ……
+	},
+	server(){
+		// ……
+	}
+	//……
+};
+
+Object.setPrototypeOf(AuthController, LoginController);
+```
+
+### Unlexical
+不过，对象属性的简写语法，会有一些缺点无法避免：
+
+```js
+var Foo = {
+	bar () {},
+	baz: function baz () {}
+};
+```
+
+👆上面的代码最终会被编译成：
+
+```js
+var Foo = {
+	bar: function () {},
+	baz: function baz () {}
+};
+```
+
+看出问题的关键了么？`bar` 方法最终会被编译成一个匿名函数，而缺少名字会导致：
+1. 让 debug 更困难，因为没办法明确的知道函数的调用栈；
+
+2. 没办法引用自己，即意味着递归调用、事件绑定都面临不可用的问题；
+
+3. 名字的缺失让函数失去了描述自身的一个可能，让代码更难以维护。
+
+不过对象属性简写对于上面的 1 和 3 都能较好的解决，因为它会内部绑定 `name` 属性，并且 `bar () {}` 从开发者的角度看的确有名字描述。但对于问题 2，则没有太好的解决办法，特别是在没办法清楚的知道这个方法适用的上下文时：
+
+```js
+var Foo = {
+	bar (x) {
+		if (x < 10) {
+			return Foo.bar(x * 2);
+		}
+		return x;
+	},
+	baz: function baz (x) {
+		if (x < 10) {
+			return baz(x * 2);
+		}
+		return x;
+	}
+};
+```
+
+遇到了这种情况，最好的办法还是显示的指定函数的名字，就如 `baz: function baz () {…}` 一样。
+
+## 审查(Introspection)
