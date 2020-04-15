@@ -689,3 +689,80 @@ var Foo = {
 遇到了这种情况，最好的办法还是显示的指定函数的名字，就如 `baz: function baz () {…}` 一样。
 
 ## 审查(Introspection)
+对象的 *类型检测(type introspection)* 是面向对象语言中一道常见的菜：检测某个实例对象是由哪个类实例化而来，从而推断出它的能力范围和构造。
+
+在JS中，提供了 `instanceof` 操作符来进行类型的检测：
+
+```js
+function Foo () {}
+
+Foo.prototype.something = function () {}
+
+var a = new Foo();
+
+if (a instanceof Foo) {
+	a.something();
+}
+```
+
+👆通过判断 `a instanceof Foo`，从而推断出 `a` 具备 `Foo` 类定义的一些方法和属性 —— 但其本质只不过是检测 `a` 是否连接到了 `Foo.prototype` 而已。这种检测方式往往会让我们误以为这是在判断 `a` 是否具备另一个对象的能力，但实际上你还得保存一个函数 `Foo` 用来关联两个对象，而不是直接检测两个对象直接是否有关联。
+
+```js
+function Bar () {}
+
+Bar.prototype = Object.create(Foo);
+
+var b = new Bar();
+
+Bar.prototype instanceof Foo; // true
+Object.getPrototypeOf(Bar.prototype) === Foo.prototype; // true
+Foo.prototype.isPrototypeOf(Bar.prototype); // true
+
+b instanceof Foo; // true
+b instanceof Bar; // true
+Object.getPrototypeOf(b) === Bar.prototype; // true
+Bar.prototype.isPrototypeOf(b); // true
+Foo.prototype.isPrototypeOf(b); // true
+```
+
+👆从直觉上来讲，你可能会用 `Bar instanceof Foo` 来检测 `Bar` 是否 “继承” 于 `Foo`，但这在JS中是不被允许的 —— `Bar.prototype instanceof Foo` 你只能用这样让人倒胃的方式来检测。
+
+另一种社区中流行的类型检测方式被称为 “鸭子类型(duck typing)” —— 这个术语来自一个谚语：“如果它看上去像是一只鸭子，并且能像鸭子一样呱呱叫，那么它就是一只鸭子(if it looks like a duck, and it quacks like a duck, it must be a duck)……
+
+```js
+if (a.something) {
+	a.something();
+}
+```
+
+👆无论 `a` 中的 `something` 是自身的还是代理某个对象的，只要有这个方法，那就认为 `a` 具备这个能力。
+
+“鸭子类型” 能解决一些问题，但其最大的隐患却是它不经过严密的测试，轻易的推断的问题。有个著名的例子是 ES6 中检测某个对象是否是 Promise 类型：只检测这个对象是否存在 `then()` 方法，如果存在，无论这个 `then()` 方法是否真的是 `thenable`，都认定它是符合 Promise 规范的对象……
+
+但如果我们采用 OLOO 的设计模式，上面的烦恼会被极大的简化：
+
+```js
+var Foo = {};
+
+var Bar = Object.create(Foo);
+
+var b = Object.create(Bar);
+```
+
+```js
+Foo.isPrototypeOf(Bar); // true
+Object.getPrototypeOf(Bar) === Foo; // true
+
+Foo.isPrototypeOf(b); // true
+Bar.isPrototypeOf(b); // true
+Object.getPrototypeOf(b) === Bar; // true
+```
+
+👆我们放弃使用 `instanceof` 这种会带来歧义的操作符，转而使用 `isPrototypeOf`、`getPrototypeOf` 等更具语义化的API来完成类型的检测 —— 一切都只是在问 “你是否是我代理的原型”？没有语义不详、冗余的 `Foo.prototype` 和 `Foo.prototype.isPrototypeOf(…)`，干干净净 —— 这也正是 OLOO 设计模式的精髓所在。
+
+## 回顾(review)
+你当然可以选择 “类和继承” 的模式来书写你的代码，但我们发现了其实还有一种同更给力的模式：**行为代理**。
+
+行为代理的设计模式没有上下结构的父子类的关系，只有平级的对象以及它们相互间的代理。一旦你选择了它，不仅是语法层面的简化，更是简化了代码的结构设计。
+
+OLOO(objects-linked-to-other-objects) 是一种编程风格，它没有抽象各种类，而仅仅是进行对象的关联，并且充分利用了 `[[Prototype]]` 原型链的机制。
