@@ -19,3 +19,5 @@
 - [原型](/objects%20%26%20classes/Prototypes.md) (Prototypes)
 
 - [行为代理](/objects%20%26%20classes/Behavior%20Delegation.md) (Behavior Delegation)
+
+- [附录-A](/objects%20%26%20classes/Appendix-A.md) (Appendix-A)
