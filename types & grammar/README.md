@@ -18,4 +18,4 @@
 
 - [语法](../types%20%26%20grammar/grammer.md) (grammer)
 
-- [附录](../types%20%26%20grammar/appendix.md) (appendix)
+- [附录-A](../types%20%26%20grammar/Appendix-A.md) (Appendix-A)

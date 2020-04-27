@@ -1,5 +1,6 @@
-# 附录：混杂不堪的JS运行环境
-## ECMAScript 的附录(Annex)B
+# 附录：混杂不堪的JS运行环境(Appendix A: Mixed Environment Javascript)
+
+## ECMAScript 的附录(Annex B)
 现代的JS能够在多种环境中运行：浏览器环境、node环境、rhino环境...而 **Annex B** 中主要讨论的是在浏览器环境中的一些兼容性问：
 - 在 **非严格模式中(non-strict mode)** 允许使用八进制(Octal)字面量，比如 `0123`(转换成十进制decimal是 `83`)
 
