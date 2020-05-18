@@ -265,3 +265,305 @@ b = a * 2;
 Chunk 2 和 Chunk 3 的执行顺序会对结果造成影响。但这个颗粒度已经是在 *函数层面* 而非 *语句表达式层面*，虽然 *函数层面* 的执行顺序不确定性也会造成 *race condition*，而只要能有效控制 *函数层面* 的执行顺序，就能解决这个问题。相关的讨论会放在后面的章节中。
 
 ## 并发(Concurrency)
+试想一下有这样一个场景：一个网站实现了滚动懒加载后续内容，即当用户触发了浏览器的滚动事件之后，会发送Ajax请求获取到数据，从而渲染真实的UI。为了说明起见，我们将这个功能拆分成两个 “进程”，第一个 “进程” 用于响应 `onscroll` 事件，即根据用户的滚动位置从而发送 Ajax 请求；第二个 “进程” 用于接收 Ajax 请求的数据，从而渲染正确的内容。
+
+**Note**：👆使用 “进程” 只是为了和后续的内容接洽，保证 “术语” 一致(terminology-wise)，而不是说这真的就是计算机系统层面的进程。你可以将它理解为是一个虚拟的进程，或者任务，说白了就是逻辑的连接以及各项操作按顺序的运行。
+
+“并发” 在这个场景下很实用：用户滚动浏览器并触发Ajax请求 和 接受到Ajax请求并渲染视图 两者之间并不冲突，它们可以同时执行(当然这是在 任务/进程层面，而非 操作系统层面)：
+
+“进程”一(`onscroll` 事件，并触发Ajax请求)：
+```
+onscroll, request 1
+onscroll, request 2
+onscroll, request 3
+onscroll, request 4
+onscroll, request 5
+onscroll, request 6
+onscroll, request 7
+```
+
+“进程”二(响应Ajax请求，并渲染视图)：
+```
+response 1
+response 2
+response 3
+response 4
+response 5
+response 6
+response 7
+```
+
+而它们真实发生的顺序，完全有可能是下面这样：
+```
+onscroll, request 1
+onscroll, request 2  response 1
+onscroll, request 3  response 2
+response 3
+onscroll, request 4
+onscroll, request 5
+onscroll, request 6  response 4
+onscroll, request 7
+response 6
+response 5
+response 7
+```
+
+但是回到 JS 的事件循环的特性，作为单线程脚本语言的它在同一时刻只能操作一个事件，因此无论 `onscroll, request 2 ` 和 `response 1` 哪一个先发生，它们都不能在同一时刻发生，而最多只能在同一个任务队列里面，排队等待处理。
+
+因此，在 JS 中真实的顺序应该是这样：
+```
+onscroll, request 1   <--- Process 1 starts
+onscroll, request 2
+response 1            <--- Process 2 starts
+onscroll, request 3
+response 2
+response 3
+onscroll, request 4
+onscroll, request 5
+onscroll, request 6
+response 4
+onscroll, request 7   <--- Process 1 finishes
+response 6
+response 5
+response 7            <--- Process 2 finishes
+```
+
+👆“进程”一 和 “进程”二 在任务层面是并发的，即会一起进入任务队列。随带一提的是 `response 4` 和 `response 5` 的返回的前后顺序并没有按照它们发送时的顺序进行，这就引入了后面要谈到的 *race condition* 问题。
+
+### 非交互(Noninteracting)
+如果上面提到的几个“进程”之间都没有任何的交互，那么它们发生的顺序是什么并不重要：
+
+```js
+var res = {};
+
+function foo(results) {
+	res.foo = results;
+}
+
+function bar(results) {
+	res.bar = results;
+}
+
+// ajax() 是某个第三方库提供的网络请求的能力
+ajax("http://some.url.1", foo);
+ajax("http://some.url.2", bar);
+```
+
+👆 `foo()` 和 `bar()` 无论他们的执行顺序是怎么样的，都不会影响到彼此，即并没有发生所谓的 *race condition* 的问题，因此顺序的 *不确定性(nondeterminism)* 是可以被接受的。
+
+### 有交互(Interaction)
+不过在大多数实际的情况下，很难做到没有交互，例如对共享作用域下的变量或者 DOM 做出任何的变动，“进程” 发生的顺序都会影响到彼此：
+
+```js
+var res = [];
+
+function response(data) {
+	res.push( data );
+}
+
+// ajax() 是某个第三方库提供的网络请求的能力
+ajax("http://some.url.1", response);
+ajax("http://some.url.2", response);
+```
+
+`res[0]` 和 `res[1]` 到底是哪个请求的结果？！这其实就是不确定的执行顺序带来的 *race condition* 问题。解决这个问题的办法也很简单：
+
+```js
+var res = [];
+
+function response(data) {
+	if (data.url == "http://some.url.1") {
+		res[0] = data;
+	}
+	else if (data.url == "http://some.url.2") {
+		res[1] = data;
+	}
+}
+
+// ajax() 是某个第三方库提供的网络请求的能力
+ajax("http://some.url.1", response);
+ajax("http://some.url.2", response);
+```
+
+👆虽然很不优雅，但是确实能够解决实际的问题。
+
+👇下面的更好玩，无论哪个请求先响应，都会让程序挂掉：
+```js
+var a, b;
+
+function foo(x) {
+	a = x * 2;
+	baz();
+}
+
+function bar(y) {
+	b = y * 2;
+	baz();
+}
+
+function baz() {
+	console.log(a + b);
+}
+
+// ajax() 是某个第三方库提供的网络请求的能力
+ajax("http://some.url.1", foo);
+ajax("http://some.url.2", bar);
+```
+
+只要一个请求响应，必然会调用(invocation) `baz()`，这时候`a` 和 `b` 中肯定有一个是 `undefined`……
+
+解决的办法有很多，比如用一种叫做 “门槛”(gate) 的方式：
+
+```js
+var a, b;
+
+function foo(x) {
+	a = x * 2;
+	if (a && b) {
+		baz();
+	}
+}
+
+function bar(y) {
+	b = y * 2;
+	if (a && b) {
+		baz();
+	}
+}
+
+function baz() {
+	console.log(a + b);
+}
+
+// ajax() 是某个第三方库提供的网络请求的能力
+ajax("http://some.url.1", foo);
+ajax("http://some.url.2", bar);
+```
+
+`if(a && b)` 的条件限制就是所谓的 “门槛” —— 只有当两个请求都返回的时候，才能调用 `baz()`。
+
+另一种解决方式是采用所谓的 “门闩”(latch) —— “先到先得，后到没有” / “赢家通吃”，比如👇 `a == undefined` 这个 “门闩”：
+
+```js
+var a;
+
+function foo(x) {
+	if (a == undefined) {
+		a = x * 2;
+		baz();
+	}
+}
+
+function bar(x) {
+	if (a == undefined) {
+		a = x / 2;
+		baz();
+	}
+}
+
+function baz() {
+	console.log(a);
+}
+
+// ajax() 是某个第三方库提供的网络请求的能力
+ajax("http://some.url.1", foo);
+ajax("http://some.url.2", bar);
+```
+
+**Note**：上面的诸多例子中，采用的都是全局变量，但这并不是一种好的方式，除了变量污染之外，还会让你的代码凌乱不堪，而 词法局部作用域 可能是一种更佳的解决方式。
+
+### 协同(Cooperation)
+“协同并发”(cooperative concurrency) 是另一种并发的模式。它的聚焦点在于将一段很长的任务，借用事件循环的机制，拆解成多个步骤，避免由于当前任务耗时较长会造成阻塞。
+
+假设有一个Ajax请求会接受到大量的数据，而后会对这些数据进行处理：
+
+```js
+var res = [];
+
+function response(data) {
+  // 将接受到的数据处理后，加入到一个数据中
+	res = res.concat(
+    // 处理数据
+		data.map(function(val){
+			return val * 2;
+		})
+	);
+}
+
+// ajax() 是某个第三方库提供的网络请求的能力
+ajax("http://some.url.1", response);
+ajax("http://some.url.2", response);
+```
+
+👆假设 `data` 是一个多达百万级的数据，想要一次性的处理完这些数据，势必会阻塞掉诸如 UI渲染、用户的各种交互 等功能，而这是难以接受的。
+
+因此，一个做法是将这些数据切片，每次只处理一定量的数据，并借助事件循环的机制处理未完成的内容：
+
+```js
+var res = [];
+
+function response(data) {
+	// 每次至多只处理1000条数据
+	var chunk = data.splice(0, 1000);
+
+	res = res.concat(
+		chunk.map( function(val){
+			return val * 2;
+		} )
+	);
+
+	if (data.length > 0) {
+		// 利用计时器实现
+		setTimeout(function(){
+			response(data);
+		}, 0);
+	}
+}
+
+// ajax() 是某个第三方库提供的网络请求的能力
+ajax("http://some.url.1", response);
+ajax("http://some.url.2", response);
+```
+
+除了按照数量来估算单次任务量，也可用按照时间消耗估算，比如利用所谓的 “时间切片” 的概念，以 50ms 为长任务的边界，借助 ES6 的 Generator，实现一个通用的方案：
+
+```js
+const longTaskThreshold = 50;
+const singleTaskThreshold = longTaskThreshold / 2;
+
+function timeslice (genF) {
+    if (!genF || typeof genF !== 'function')  return genF;
+
+    const gen = genF();
+
+    if (typeof gen.next !== 'function') return gen;
+
+    return new Promise((resolve, reject) => {
+      function next () {
+        try {
+          const start = performance?.now() || getTs();
+          let res = null;
+    
+          do {
+            res = gen.next();
+          } while (!res.done && (performance?.now() || getTs()) - start < singleTaskThreshold);
+    
+          if (res.done) {
+            resolve(res.value);
+            return;
+          }
+
+          setTimeout(next);
+        } catch (err) {
+          reject(err);
+        }
+      }
+
+      next();
+    });
+  };
+```
+
+**Note**：当有多个 `setTimeout(…, 0)` 时，并不能保证它的回调函数会按照预设的顺序，在下一个事件循环中有序的执行。因此，若是在 Node.js 环境中，使用 `process.nextTick(…)` 会是一个相对靠谱的方案。
+
+## 任务(Jobs)
