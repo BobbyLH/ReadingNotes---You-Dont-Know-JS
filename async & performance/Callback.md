@@ -56,3 +56,236 @@ y = z;
 比你不知道为什么代码挂了还要衰的事情是 —— 你不知道为什么这段代码居然会第一时间执行。Sartre 说："Hell is other people"，程序员们可能会说："Hell is other people's code"，但我更相信："Hell is not understanding my own code"。而这一切的万恶之源就是回调函数。
 
 ### 嵌套/链式 回调函数(Nested/Chained Callback)
+嵌套的回调函数只是“红鲱鱼” —— “回调地狱(callback hell)” 才是主题。
+
+```js
+window.addEventListener("click", function handler(evt){
+	setTimeout(function request(){
+		ajax("http://some.url.1", function response(text){
+			if (text == "hello") {
+				handler();
+			} else if (text == "world") {
+				request();
+			}
+		});
+	}, 500);
+});
+```
+
+👆上面一共有三层嵌套，是 “回调地狱” 的常见形式，也被称为 “末日金字塔(pyramid of doom)” —— 呈现了一种根据嵌套缩进的 “侧面朝向的三角形” 图形，塔尖在最右侧。
+
+但 “回调地狱” 最大的问题可不是在于 “形状”，不过先让我们来看看上述例子的整个流程：
+
+首先，我们等待 “点击事件” 的触发：
+
+```js
+window.addEventListener("click", function handler(evt){
+  // ...
+})
+```
+
+而后，触发一个定时器：
+
+```js
+setTimeout(function request(){
+		// ...
+}, 500);
+```
+
+接下去发起一个 ajax 请求：
+
+```js
+ajax("http://some.url.1", function response(text){
+	// ...
+});
+```
+
+最后，进入 `if...else...` 的条件判断：
+
+```js
+if (text == "hello") {
+	// ...
+} else if (text == "world") {
+	// ...
+}
+```
+
+这样一步步的分析下来看上去还行？！好吧，那再看看下面的一段伪代码：
+
+```js
+doA(function(){
+	doB();
+
+	doC(function(){
+		doD();
+	})
+
+	doE();
+});
+
+doF();
+```
+
+你能瞟(glanced)一眼就说出它的运行顺序么？反正我至少要在脑子里过一遍：
+
+- `doA()`
+
+- `doF()`
+
+- `doB()`
+
+- `doC()`
+
+- `doE()`
+
+- `doD()`
+
+好吧，为了减少所谓的字母干扰，我们在来一遍：
+
+```js
+doA(function(){
+	doC();
+
+	doD(function(){
+		doF();
+	})
+
+	doE();
+});
+
+doB();
+```
+
+嗯，现在的顺序成了：`A -> B -> C -> D -> E -> F`...但你的眼睛肯定要来回瞟吧？！
+
+就算你已经很熟练且自然了，那若是这些都是同步而非异步呢？最终的顺序就得是 `A -> C -> D -> F -> E -> B`。
+
+回到一开始的 event/timeout/Ajax 嵌套来：
+
+```js
+window.addEventListener("click", handler);
+
+function handler() {
+	setTimeout(request, 500);
+}
+
+function request(){
+	ajax("http://some.url.1", response);
+}
+
+function response(text){
+	if (text == "hello") {
+		handler();
+	}
+	else if (text == "world") {
+		request();
+	}
+}
+```
+
+👆上面这样一拆分，好像清晰优雅了很多？！但真实的情况是嵌套往往超过三层，而且一旦某一层出了问题，这样的连续就会被中断。而若是想要新增一层嵌套的代价往往是巨大的。而且从我们大脑的工作模式来看(按顺序且阻塞)，这样的 “异步回调模式” 的代码很是让人费解 —— 因为我们先得把它转换成同步的代码。
+
+## 信任问题(Trust Issues)
+信任问题，这显然是更为严重的问题。比如回到上面例子中的 ajax 网路请求一段：
+
+```js
+// A
+ajax("http://some.url.1", function response(text){
+	// B
+});
+// C
+```
+
+`// A` 和 `// C` 显然在 `// B` 之前就执行完毕了，但 `// B` 到底什么时候执行是一个未知数 —— 通常情况这种将控制权交出去的做法不会导致什么大问题，但这正是回调模式驱动的最大问题所在 —— 这种被称为 “控制反转(IoC inversion of control)” 的情况一旦发生在脱离你控制的第三方库手中，那么你们之间就只剩下一份薄薄的 “没被承认过的协约”，你只能期待事情会按照你的预期进行下去。
+
+### 五次调用的故事(Tale of Five Callbacks)
+这可不是什么好故事，不过若是你提前知道了你也可能会发生这种情况的话，就能尽量避免一些不必要的Bug，故事是这样的：
+
+话说假设你是一家电商购物的程序员，在你们平台上最后的交易环节，依赖一个第三方的大数据分析商家提供的数据追踪工具，你写的代码可能长这样：
+
+```js
+analytics.trackPurchase(purchaseData, function(){
+	chargeCreditCard(); // 扣款的方法
+	displayThankyouPage(); // 支付成功页面
+});
+```
+
+代码上线几个月平稳运行，皆大欢喜。
+
+但6个月后的某天早上，当你正享受你的拉铁咖啡，悠闲的开始一天的工作时，你的老板突然急急忙忙的打了一个电话来，说有一件紧急情况需要处理。于是你赶紧跑到他的办公室，里面还有客户专员。情况原来是有一个用户在购买一台很贵的 iphone 时，他的银行卡被刷了五次？！可是他只买了一台手机...
+
+虽然用户收到了退款，而且还赠送了一些小礼物，但你的老板坚持要你查一查扣款的日志记录。你很不情愿的连接好了后台管理系统，打开后惊出一身冷汗 —— 那段数据分析的回调居然被调用了五次！！！你迫不及待的联系了供应商，而他们给的反馈居然是：“很抱歉，之前有个新人将测试环境的代码发布到生产环境了，我们已经第一时间修复了，感谢您的支持，祝您生活愉快，再见！”
+
+WTF？你简直不能忍受，于是决定将它们 “纳入黑名单”：
+
+```js
+var tracked = false;
+analytics.trackPurchase(purchaseData, function(){
+  if (tracked) return;
+  tracked = true;
+	chargeCreditCard(); // 扣款的方法
+	displayThankyouPage(); // 支付成功页面
+});
+```
+
+哼哼，看你小子还敢给我搞什么妖蛾子！ —— 但是...和你搭档的测试妹子突然说：“要是他们不调用这个函数怎么办？！”
+
+于是你突然发现有很多种会导致Bug的情况：
+  - 过早地调用了 callback
+
+  - 过迟地调用了 callback
+
+  - 调用了太多次
+
+  - 回调参数不正确
+
+  - 错误情况被“吃”了
+
+  - ...
+
+而后你突然意识到，程序里面这样的地方还有很多...这已经不单单是 “回调地狱” 的问题那么简单了！
+
+### 不仅仅是别人的代码(Not Just Other's Code)
+“永远不要信任别人的代码” 是一个解决信任问题的办法。
+
+但认真反思一个问题 —— 你真的能信任能由你控制的代码吗？
+
+太自信了：
+```js
+function addNumbers(x, y) {
+	return x + y;
+}
+
+addNumbers(21, 21);	// 42
+addNumbers(21, "21"); // '2121'
+```
+
+加一层 “防御”：
+```js
+function addNumbers(x, y) {
+  if (typeof x !== "number" || typeof y !== "number") {
+		throw Error( "Bad parameters" );
+	}
+
+	return x + y;
+}
+
+addNumbers(21, 21);	// 42
+addNumbers(21, "21"); // Error 'Bad parameters'
+```
+
+或者更友好一些：
+```js
+function addNumbers(x, y) {
+  typeof x !== "number" && (x = Number(x));
+  typeof y !== "number" && (y = Number(y));
+	return x + y;
+}
+
+addNumbers(21, 21);	// 42
+addNumbers(21, "21"); // 42
+```
+
+但是难道说我们每一个函数都得加上这些检查吗？！是的！不过回调函数在这件事情上毫无建树 —— 都得靠你自己。特别是在你的代码依赖外部不受控制的第三方库时 —— 潜在的 Bug 难道就不是 Bug 了？！
+
+## 救救回调函数吧？(Trying to Save Callbacks)
