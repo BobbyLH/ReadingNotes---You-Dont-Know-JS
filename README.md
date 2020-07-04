@@ -1,4 +1,4 @@
-# 读书笔记 之《You Don't Know JS》
+# 读书笔记 之《You Don't Know JS》- 第一版
 
 ## 罗列了关于拜读《You Don't Know JS》之后的一些收获，仅作为参考 —— 强烈推荐[阅读原著](https://github.com/getify/You-Dont-Know-JS "You Don't Know JS")
 
@@ -30,4 +30,4 @@
 
 - [ES6+](/es6%20%26%20beyond/README.md) (ES6 & Beyond) --- 进行中
 
-**News**：目前该书正在在线编辑最新版，新增加了不少内容，待完成后也会同步至读书笔记中，敬请期待
+**News**：目前该书正在在线编辑第二版，新增加了不少内容，待完成后也会同步至读书笔记中，敬请期待
