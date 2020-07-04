@@ -97,3 +97,171 @@ add(fetchX(), fetchY())
 Promise 是一种能够很容易的封装、组合 *未来的值(fature value)* 的机制。
 
 ### 完成事件(Completion Event)
+除了代表 “未来的值” 之外，对 Promise 的另一个洞见是把它视为是一个 “流程控制” 的机制 —— 将异步的任务拆解为多个步骤用来执行。
+
+假设有一个函数 `foo` 会执行一些任务，但我们并不知道它执行的细节，以及它到底是立即执行还是延迟一会后再执行，我们只知道它会通知我们它已经完成，而后我们可以接下去做后续的任务 —— 在 JS 的编程范式中，你通常需要监听这些 “通知”，就好像事件触发的机制一样，我们能够自定义一些需求，打包成一个回调函数，并将回调函数传递给 `foo`；最终 `foo` 会根据情况触发这个回调函数，以此来完成我们的需求。
+
+不过在 Promise 的机制下，这样的关系被反转了 —— 我们的回调函数不再是被 `foo` 触发的，而是通过 Promise 这个中间层来触发，比如下面的一段伪代码：
+
+```js
+foo(x) {
+	// 异步操作……
+}
+
+foo(42)
+
+on (foo 'success') {
+	// foo 完成了，接着做下一步事情
+}
+
+on (foo 'error') {
+	// foo 发生了点问题，处理一下
+}
+```
+
+`foo(…)` 不必关心，也不用要处理一些订阅它的事件，这些都交给了 `on(…)`，这是一种很好的 "责任分离(separation of concerns)" 的实现。
+
+但在 Promise 出来之前，在 JS 中想要实现这样的效果，只能 “魔改” 一把：
+
+```js
+function foo(x) {
+	// 异步操作……
+
+	// 返回一个 listener 对象，它有一个 `on` 方法，能够实现事件的绑定
+	return listener;
+}
+
+const evt = foo(42);
+
+evt.on('success', function(){
+	// foo 完成了，接着做下一步事情
+});
+
+evt.on('error', function(err){
+  // foo 发生了点问题，处理一下
+});
+```
+
+👆 `foo(…)` 返回了一个对象能够处理事件的订阅，如此一来我们就能像事件机制一样来完成对 `foo` 后续任务的处理。但说到底，`listener` 依然是由 `foo` 内部实现，并没有颠覆 “控制反转” 的底层逻辑。
+
+当然，你还能将监听 `foo` 的 `success` 和 `error` 事件分开，单独封装成 `bar` 和 `baz`：
+
+```js
+// `bar` 监听 `foo` 的 success
+bar(evt);
+
+// `baz` 监听 `foo` 的 error
+baz(evt);
+```
+
+若是 `evt` 或者说 `listener` 是由一个可靠的第三方机制来生成的话，那的的确确实现了 “反控制反转(Uninversion of control)”，并且加上 “责任分离” 的效果，看上去真的很 nice。
+
+#### Promise“事件”(Promise "Events")
+其实 `evt` 就是对 Promise 的一个类比，在 Promise 的机制下，`foo(…)` 会返回一个 Promise 的实例，而后这个实例会作为参数传递给 `bar(…)` 和 `baz(…)`。
+
+**Note**：需要注意的是之前对于事件的措辞，严格来讲，Promise 的实现并不是通过事件机制，更没有 `success` 和 `error` 之类的事件监听；不过你也能将调用其实例上的 `then(…)` 和 `catch(…)` 方法，理解成注册了 `fulfillment` 或 `rejection` 事件 —— 虽然我们不会在真实的代码中展示出来：
+
+```js
+function bar (fooPromise) {
+	fooPromise.then(
+		function(){
+			// resolve 监听
+		},
+		function(){
+			// reject 监听
+		}
+	);
+}
+
+// baz 同上
+
+function foo(x) {
+	// 异步操作……
+
+	// 返回一个 Promise 的实例
+	return new Promise(function(resolve, reject){
+		// 内部调用 `resolve` 或则 `reject`，最终会触发绑定的回调
+	});
+}
+
+var p = foo(42);
+
+bar(p);
+
+baz(p);
+```
+
+👆 `new Promise(function (resolve, reject) {})` 这种模式被称为 [revealing constructor](https://blog.domenic.me/the-revealing-constructor-pattern/) —— 被传入 Promise 构造函数的函数会被立即执行，并接受两个参数，一个是 `resolve`，调用它会产生 fulfillment 的状态；另一个是 `reject`，调用它会产生 rejection 的状态。
+
+另一种更优雅实现的方式，将操作 `resolve` 和 `reject` 的代码分离，而不是耦合在一起：
+
+```js
+function bar() {
+	// resolve 监听
+}
+
+function oopsBar() {
+	// reject 监听
+}
+
+// `baz()` 和 `oopsBaz()` 同上
+
+var p = foo(42);
+
+p.then(bar, oopsBar);
+
+p.then(baz, oopsBaz);
+```
+
+**Note**：`p.then(…).then(…)` 和 `p.then(…);p.then(…)` 是两个完全不一样的代码，前者的链式调用中，前后两个 `then(…)` 是不同的 Promise 实例上的方法；后者则都是出自同一个 Promise 实例的 `then(…)` 方法，并且它的状态一旦确定，就无法被改变了。
+
+
+## Then的鸭式类型(Thenable Duck Typing)
+使用 Promise 面临的最头疼的问题是如何确定某个对象是不是真正的 Promise。
+
+`p instanceof Promise` 这样的检测方式没办法完全满足需求的主要原因是，浏览器窗口之间(iframe)的交互，若是它们使用的 Promise实例 是不同的构造函数创建的，那这样的检测就会失败。
+
+再者，若是你使用了某个三方的库，它的 Promise 并非是基于原生的 Promise 来实现，那么也无法满足需求。
+
+因此，社区内广泛流行的一种 类型检测 机制是基于 “鸭式类型(duck typing)” —— 如果它长得像鸭子，并且能像鸭子一样呱呱的叫，那么它就是鸭子。这种基于 “值的形状” 的检查，被用于 “Promise的真假美猴王” 之中，即所谓的 thenable：
+
+```js
+function isPromise (p) {
+  if (p !== null && (typeof p === 'object' || typeof p === 'function') && typeof p.then === 'function') {
+    // thenable!
+    return true;
+  }
+  return false;
+}
+```
+
+好像还行？立马露馅：
+
+```js
+var o = { then: function() {} };
+
+var v = Object.create(o);
+
+v.hasOwnProperty('then'); // false
+
+isPromise(v); // true
+```
+
+而若是有人 无意/故意/恶意 在一些内置的类的原型对象上面添加了 `then` 方法的话：
+
+```js
+Object.prototype.then = function(){};
+Array.prototype.then = function(){};
+
+var v1 = { hello: 'world' };
+var v2 = [ 'Hello', 'World' ];
+
+isPromise(v1); // true
+isPromise(v2); // true
+```
+
+👆要是你把这些对象作为参数传递给之前的 `baz`、`bar` 的话，那它们会被永远的挂起……
+
+你可能会觉得，这是危言耸听吧？！遇到这种情况的概率实在是太小了。但你不得不防的是有一些你依赖的第三方的库，它们很可能是在 ES6 之前的产物，并且有 `then` 方法挂载在它的某个对象上。遇到这种情况，`isPromise` 就不好使了。
+
+## Promise 和 信任问题(Promise Trust)
