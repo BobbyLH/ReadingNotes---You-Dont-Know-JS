@@ -265,3 +265,163 @@ isPromise(v2); // true
 你可能会觉得，这是危言耸听吧？！遇到这种情况的概率实在是太小了。但你不得不防的是有一些你依赖的第三方的库，它们很可能是在 ES6 之前的产物，并且有 `then` 方法挂载在它的某个对象上。遇到这种情况，`isPromise` 就不好使了。
 
 ## Promise 和 信任问题(Promise Trust)
+虽然前面我们已经通过两个很形象的类比(“未来的值”和“完成的事件”)，了解到 Promise 如何在异步领域大放光彩的，但如果仅仅到这里，不继续深入的话，那就失去了让我们了解其最重要的核心特征(也是Promise 之所以存在的根本原因)的机会 —— 信任(Trust)。
+
+回顾下基于 回调函数 的异步代码由于其 控制反转 而带来的各种 “信任” 问题：
+
+  - 过早的调用回调函数
+
+  - 过迟的调用回调函数
+
+  - 太少/太多 地调用了回调函数
+
+  - 调用回调函数时，缺少必须的参数
+
+  - 把各种异常和错误都 “吞掉了” 
+
+下面，让我们一个个的来看 Promise 到底是如何解决这些问题的：
+
+### 过早的调用(Calling Too Early)
+回调函数可能是同步，也可能是异步被调用，而没有一个内置的机制确保其一定是异步的，除非手动的使用 `setTimeout(…)`。
+
+而在 Promise 的机制中，任何放到 `then(…)` 中的回调函数，能够被确保总会是异步被调用的(准确来讲是通过 *任务队列* 的机制来实现的)。
+
+### 过迟的调用(Calling Too Late)
+👆 和上面的一样，任何放到 `then(…)` 中的回调函数，在 调用了由 Promise 提供的 `resolve(…)` 或 `reject(…)` 后，能够确保总会在接下去的任务队列中被调用 —— 你不可能在同步的任务中观察到它被执行。因此，当一个 Promise 实例的状态发生改变，那么所有注册在它的 `then(…)` 方法上的回调函数都会按照注册的顺序被调用，即便是在这些回调函数的内部，也没办法影响(延迟)其他的回调函数：
+
+```js
+const p = new Promise((resolve, reject) => {
+  resolve('some data');
+});
+
+p.then(function () {
+  p.then(function () {
+    console.info('C');
+  });
+  console.info('A');
+});
+
+p.then(function () {
+  console.info('B');
+});
+
+// A B C
+```
+
+👆 `'C'` 无法阻止或改变 `'B'` 的执行(顺序)，而这也是 Promise 的优势之一。
+
+#### Promise 顺序的怪癖(Promise Scheduling Quirks)
+需要格外注意的是，在两个分开的 Promise 链式代码里的回调函数，你是没有办法确保它们的执行顺序的。比如，两个 Promise 的实例 `p1` 和 `p2` 同时变到了 resolved 的状态，`p1.then(…)` 和 `p2.then(…)` 书写的先后顺序通常是其内部回调函数的执行顺序，但若是改变一些细节：
+
+```js
+const p3 = new Promise((resolve, reject) => {
+  resolve('B');
+});
+
+const p1 = new Promise((resolve, reject) => {
+  resolve(p3);
+});
+
+const p2 = new Promise((resolve, reject) => {
+  resolve('A');
+});
+
+p1.then(function (v) {
+  console.info(v);
+});
+
+p2.then(function (v) {
+  console.info(v);
+});
+
+// A B
+```
+
+
+![Promise Scheduling Quirks](./assets/promise_schedule_quirks.jpg)
+
+
+👆并非按照设想的打印出了 `B A`，这是因为 `p1` 中的 `resolve(p3);` 其实是 resolve 了另一个异步任务，而 `p2` 则 resolve 的一个同步任务，因此在这个维度看，`p2` resolve 的结果要早于 `p1` 的结果。不过这一切都发生在同一个任务队列中，即 **它们resolve的结果** 并没有同步和异步的区别。
+
+### 没有调用回调函数(Never Calling the Callback)
+这个问题在 Promise 中很好搞定：只要你注册了 fulfillment 和 rejection 的回调函数，一旦 Promise 的状态改变，就必然会调用其中的某一个回调。至于所谓的会被 “永远地挂起”，即状态永远没有任何改变？其实很好解决：
+
+```js
+function timeoutPromise (delay) {
+  return new Promise(function (resolve, reject) {
+    setTimeout(function () {
+      reject('timeout');
+    }, delay);
+  })
+}
+
+Promise.race([
+  foo(),
+  timeoutPromise(3000)
+])
+.then(
+  function () {},
+  function (err) {}
+);
+```
+
+一旦 `3000` 毫秒过了，`foo()` 返回的 Promise 实例还没确定状态的话，就会走到超时的逻辑中，因此你也不用担心你的程序会被 “永远地挂起”。
+
+### 太少/太多 的调用(Calling Too Few or Too Many Times)
+理想的回调函数被调用的次数肯定是 one —— 这没有疑议吧？！那么 “太少” 就是没有被调用，那就回到👆上面提到的部分。
+
+“太多” 的疑虑也很容易被解决 —— 一旦 Promise 状态确定了，那之后就无法再次改变，即便你反复的调用实例化时，提供给你的 `resolve(…)` 和 `reject(…)`，Promise 实例只会接受第一个被调用的，其他的都会被忽视。
+
+因此，任何注册在 `then(…)` 中的回调，只会被调用一次。当然，你能够无限制的在相同的 Promise 实例中注册相同的回调函数，比如 `p.then(f); p.then(f);`，那它们会被与之对应的次数… —— 不过那是你自己的非得要搬起石头砸自己的脚，你怪谁？！
+
+### 缺少所需的参数(Failing to Pass Along Any Parameters/Environment)
+
+`resolve(…)` 和 `reject(…)` 都能接收 **一个** 任何类型的参数，它们会被传递给所有注册的回调函数。
+
+若是超过了一个参数？除了第一个，其他都会被 “无情的抛弃”。千万别幻想用 `resolve(…);resolve(…);resolve(…);……` 来实现多个参数的传递 —— 还是老老实实的用 `object` 或者 `array` 来包裹多个参数比较现实。
+
+另外，任何注册到 `then(…)` 中的回调函数，都保存了定义它时的上下文，即 “闭包” 这个能力依然有效。
+
+### “吞掉了”各种异常和错误(Swallowing Any Errors/Exceptions)
+
+```js
+const p = new Promise(function (resolve, reject) {
+	foo.bar();
+	resolve(42);
+});
+
+p.then(
+	function fulfilled () {
+    // 永远到不了这儿
+  },
+	function rejected (err) {
+    // TypeError
+  }
+);
+```
+
+👆 `foo.bar();` 是产生错误的源头，而且即便是这个异常是发生在 Promise 的实例化过程中(同步)，也会让这个异常在异步的行为中被捕获 —— 这一点非常牛逼，能够让你无感的就解决了之前提到的 race condition 的问题，无论这段代码否产生了异常。
+
+那若是异常发生在 `fulfilled` 的回调函数中呢？
+
+```js
+const p = new Promise(function (resolve, reject) {
+	resolve(42);
+});
+
+p.then(
+	function fulfilled (val) {
+    foo.bar();
+    console.info(val);
+  },
+	function rejected (err) {
+    // 永远到不了这儿
+  }
+);
+```
+
+好像把异常“吞掉了”？那只是幻觉 —— `p.then(…)` 其实会返回另一个 Promise 的实例，而这个实例则会进入到异常捕获的状态。
+
+你可能会想，为啥不直接进入到当前这个 Promise 实例的异常捕获完事？当然不能，因为这违背了 Promise 最重要的原则 —— 一旦状态确定就不能改变。即 `p` 总是 值为 `42` 的 fulfilled 的状态。而若是违背了这一原则，试想下，当你在同一个 Promise 的实例上，注册了多个回调的时候，就会发现有的结果是这样，有的结果是那样……
+
+### 能被信任的Promise?(Trustable promise?)
