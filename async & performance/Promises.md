@@ -497,3 +497,23 @@ Promise.resolve(foo(42))
 Promise 通过颠覆控制反转，带来的不仅仅是可信任的代码和执行机制，更为重要的是它解放了我们的心智，让我们能够更专注于其他任务。
 
 ## 链式流(Chain Flow)
+前面我们已经看过不止一遍了，我们可以用一连串 *this-then-that* 的操作，将许多个 Promise 串联起来，组成一个有序的异步链式代码块。
+
+而让这一切起作用的核心，源自于 Promise 的两个内置的行为模式：
+
+- 每次调用 Promise 的 `then()` 方法后，都会返回一个新的 Promise，因此我们可以一直链接下去；
+
+- 无论 `then()` 的 fulfillment 回调函数(即 `then` 的第一个参数) return 任何值，它都会被自动的设置为 Promise 链中的 fulfillment 状态。
+
+```js
+var p = Promise.resolve(22);
+
+var p2 = p1.then(res => {
+  console.log(res); // 22
+  return res * 2;
+});
+
+p2.then(res => console.log(res)); // 44
+```
+
+return 的 `res * 2` 就是第一个 `then()` 方法的 fulfillment 回调函数返回的值，它会被自动设置为 `p2` 的 `then()` 方法的 fulfillment 回调函数接收到的值。
