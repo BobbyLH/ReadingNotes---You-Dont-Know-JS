@@ -501,14 +501,14 @@ Promise 通过颠覆控制反转，带来的不仅仅是可信任的代码和执
 
 而让这一切起作用的核心，源自于 Promise 的两个内置的行为模式：
 
-- 每次调用 Promise 的 `then()` 方法后，都会返回一个新的 Promise，因此我们可以一直链接下去；
+- 每次调用 Promise 的 `then(…)` 方法后，都会返回一个新的 Promise，因此我们可以一直链接下去；
 
-- 无论 `then()` 的 fulfillment 回调函数(即 `then` 的第一个参数) return 任何值，它都会被自动的设置为 Promise 链中的 fulfillment 状态。
+- 无论 `then(…)` 的 fulfillment 回调函数(即 `then` 的第一个参数) return 任何值，它都会被自动的设置为 Promise 链中的 fulfillment 状态。
 
 ```js
 var p = Promise.resolve(22);
 
-var p2 = p1.then(res => {
+var p2 = p.then(res => {
   console.log(res); // 22
   return res * 2;
 });
@@ -516,4 +516,145 @@ var p2 = p1.then(res => {
 p2.then(res => console.log(res)); // 44
 ```
 
-return 的 `res * 2` 就是第一个 `then()` 方法的 fulfillment 回调函数返回的值，它会被自动设置为 `p2` 的 `then()` 方法的 fulfillment 回调函数接收到的值。
+return 的 `res * 2` 就是第一个 `then(…)` 方法的 fulfillment 回调函数返回的值，它会被自动设置为 `p2` 的 `then(…)` 方法的 fulfillment 回调函数接收到的值。而后你可以将 `p2.then(…)` 返回的值储存到另一个变量 `p3` 中，并操作它的 `then(…)` 方法……
+
+可即便是将 Promise 储存于 `p2` 也显得有些多余，直接 “串” 起来其实就可以了：
+
+```js
+var p = Promise.resolve(22);
+
+p
+.then(res => {
+  console.log(res); // 22
+  return res * 2;
+})
+.then(res => console.log(res));
+```
+
+👆无论你想 “串” 起多少个 `then(…)` 都是可以的，这源于每个 `then(…)` 都会自动的返回一个新的 Promise 的本质所在。
+
+到这里，“这道菜” 似乎一切都很完美，但还是感觉缺点调料 —— 若是想在 `then(…)` 中处理一个异步事件，发起一个网络请求的话，要怎么做呢？关键依然在 `then(…)` 的返回值上：
+
+```js
+var p = Promise.resolve(22);
+
+p
+.then(res => {
+  console.log(res); // 22
+  return new Promise((resolve, reject) => {
+    resolve(res * 2); // 将 Promise 的状态设置为 fulfill，以便能在下一个 then(…) 中的第一个回调函数中拿到相应的值
+  });
+})
+.then(res => console.log(res));
+```
+
+👆看见了么？关键是 return 一个 thenable 或 Promise，而后在下一个 `then(…)` 方法里的回调函数被调用前，会一层层地递归拆解(unwrapping)这个返回的 thenable 或 Promise，直到它的最后状态被确定下来(resolution)为止。
+
+因此，想要在这一串链式中实现异步操作：
+
+```js
+var p = Promise.resolve(22);
+
+p
+.then(res => {
+  console.log(res); // 22
+  return new Promise((resolve, reject) => {
+    // 1000 毫秒后的异步操作
+    console.time();
+    setTimeout(() => resolve(res * 2), 1000);
+  });
+})
+.then(res => {
+  console.timeEnd();
+  console.log(res);
+}); // log会发生在 1000 毫秒后
+```
+
+![promise_async](./assets/promise_chain_flow_async.png)
+
+👆这也意味着，每一步都能使用异步，精准地控制何时触发下一步的回调函数，形成一条完整的异步流：
+
+```js
+function delay (time, data) {
+  return new Promise(function (resolve, reject) {
+    setTimeout(() => resolve(data), time)
+  });
+};
+
+delay(100)
+.then(function step2() {
+  console.log('step 2 after 100ms');
+  return delay(200);
+})
+.then(function step3() {
+  console.log('step 3 after 200ms');
+})
+.then(function step4() {
+  console.log('step 4 next job');
+  return delay(50);
+})
+.then(function step5() {
+  console.log('step 5 after 50ms');
+})
+```
+
+若是没有指定 return 值，那么就会返回 `undefined`，但这并不会影响到 Promise 的链式流。但说句实话，简单的使用 `setTimeout` 来延迟代码执行的时间，在实际的开发中并没有什么用，👇以下是更贴近实际开发的例子：
+
+```js
+function request (url) {
+  return new Promise((resolve, reject) => {
+    ajax(url, resolve);
+  });
+}
+
+request('http://some.url.1/')
+.then(response1 => request(`http://some.url.2/?v=${response1}`))
+.then(response2 => console.log(response2));
+```
+
+两个串行的网络请求，第二个请求依赖于第一个请求返回的值，这样的场景在实际的开发过程中很常见。此时 Promise 的链式结构不仅实现了多个异步任务按照顺序串行进行，而且还能够在每个步骤间实现消息的传递。
+
+不过，任何程序都可能会发生异常情况，在 Promise 中当然也内置了对异常的处理逻辑：
+
+```js
+request('http://some.url.1/')
+.then(response1 => {
+  foo.bar(); // error!
+  request(`http://some.url.2/?v=${response1}`);
+})
+.then(
+  response2 => console.log(response2),
+  err => {
+    console.log(err);
+    return 42;
+  }
+)
+.then(msg => console.log(msg)); // 42
+```
+
+`then(…)` 的第二个参数就是当异常发生时，被调用的 rejection 回调函数。无论是 `reject`、`throw new Error(…)`、或者是上面看到错误代码 `foo.bar();`，都会激活 rejection 回调函数。
+
+无论是忽略 fulfillment 还是 rejection 的回调函数，一旦 Promise 的状态被确定后，都会继续沿着 Promise 链冒泡，直到遇见处理它的回调函数为止：
+
+```js
+var p = Promise.reject('reject msg!');
+
+p
+.then(
+  res => console.log('fulfillment handler: ', res)
+)
+.then(
+  null,
+  err => console.log('rejection handler: ', err)
+);
+```
+
+![rejection_handler](./assets/promise_chain_flow_rejection.png)
+
+**Note**：本质上来看，`then(null, function (err) { //... })` 的模式和 `catch(function (err) { //... })` 行为一致。
+
+无论链式流多么有用，都不该把它视为是 Promise 的最核心的意义所在，顶多算作是一个副产品。而 *标准化异步操作流程* 和 *将时间和状态都封装到值的依赖中*，是让我们能够将其链接起来的关键所在。
+
+不过，链式调用的 *this-then-this-then-this...* 的模式依然有太多的 “八股(boilerplate)” 需要一次又一次的被实现出来，而解决这个问题是需要一个更为优雅的异步流程控制模式 —— generator。
+
+### 术语：Resolve, Fulfill 和 Reject(Terminology: Resolve, Fulfill, and Reject)
