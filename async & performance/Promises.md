@@ -822,3 +822,83 @@ p.then(
 **警告**：若是你在创建 Promise 的过程中，没有按照规范来(比如 `new Promise(null)`、`Promise.all()`、`Promise.race(42)`)，那这个异常会立刻被抛出，而不是被解析为 rejected 状态后，由 reject 的回调函数来处理。
 
 ### 绝望之坑(Pit of Despair)
+Jeff Atwood 多年前的一篇博客 [绝望之坑](https://blog.codinghorror.com/falling-into-the-pit-of-success/) 是这一节标题的起源。
+
+而 Promise 也有所谓的 “绝望之坑” —— 对错误处理 —— 一旦你忘记去监听它的错误事件，那它默认就会吞噬掉所有的错误信息，这显然难以让人接受。
+
+针对这个问题，社区中提出的避免的办法是：无论如何，一定要在你的 Promise 代码后加上 `catch(…)`，以此来保证错误信息能被捕获：
+
+```js
+const p = Promise.resolve(42);
+
+p
+  .then(msg => console.log(msg.toLowerCase()))
+  .catch(handleErrors);
+```
+
+👆在 `then(…)` 方法中的 `msg.toLowerCase()` 显然会导致错误的发生，因为 `p` resolve 的值为数字类型的 `42`，而紧随其后的 `catch(…)` 在这个例子中能够很好的捕获到错误的信息。
+
+所以，搞定了？没那么简单 —— 若是 `handleErrors(…)` 自己本身发生了错误呢？这就好像监管者自己不遵守规则，从而监守自盗一样，而你也没办法通过再加一个 `catch(…)` 来解决问题，因为，这个监控程序依然可能发生错误 —— 好像进入了死胡同？
+
+### 未捕获的异常(Uncaught Handling)
+目前为止，还没有办法能够彻底解决上面的问题，但不排除的确有办法能够处理的更优雅一些。
+
+有一些 Promise 的第三方库实现了一个 “全局未捕获异常(global unhandled reject)” 的处理逻辑 —— 比方说当监测到 Promise 的状态变成了 rejected，此时开启一个定时器，在 3 秒后若没有任何的异常处理程序被触发，那么它就会假定说这个 Promise 有一个 `uncaught` 的异常。
+
+但，通过 3 秒来判断是否发生了 “未捕获的异常” 显然太过武断了，即便是这数值(3秒)通过了大量的实验验证，比如依然会有这样的情况存在：在某个场景下发生的错误，就是需要你延时处理，这个时候你希望的是 Promise 能 hold 住这些错误，而不是报一个 uncaught errors。
+
+另外的一种呼声是在 Promise 中添加 `done(…)` 方法：在这个方法执行完后，它不会像其他方法一样返回一个新的 Promise，这就会结束到无休止的链式代码，因此由链式调用可能导致的无穷尽的错误就能够被避免。
+
+而这最终会导致在 `done(…)` 中产生的错误被抛到全局：
+
+```js
+const p = Promise.resolve(42);
+
+p
+  .then(msg => console.log(msg.toLowerCase()))
+  .done(null, handleErrors);
+```
+
+👆这比起之前的法子，确实更优雅了。但问题是，这个方案并没有在 ES6 中被标准化，因此最好的出路是找到一个可靠的且通用的解决方案。
+
+还有一种方案，借助浏览器的底层能力：浏览器拥有的底层能力，比起我们能通过JS代码是现实的，要强大很多，就比如对 Promise 调用栈的追踪。当垃圾回收触发时，浏览器当然 Promise 的状态是否是 rejection，而且还能知道是否有 uncaught error —— 把它输出到控制台应该没有任何难度。
+
+但也有问题，比如当 Promise 没有被垃圾回收的时候 —— 这样的情况时长会发生在你的代码越写越多，进而变得杂乱不堪时，鬼知道哪段代码形成了闭包，进而导致内存溢出啥的。那通过浏览器追踪 Promise 的调用栈，从而发现 uncaught error 的办法，就不太靠谱了。
+
+那么，还有别的办法吗？当然！
+
+### 成功之坑(Pit of Success)
+虽然下面的部分都是纯理论的，但未来的某天，Promise 说不定就会实现这些功能(即便没有实现，也能通过各种 polyfill 来实现，因为它没有打破任何现有的机制，从而有不错的兼容性)：
+
+- Promise 会在下一轮的 任务(Job) 或 事件循环(event lop) 将任何未捕获的错误报告出来；
+
+- Promise 的实例上会实现一个 `defer()` 方法，它可以无限期的延迟 Promise 未捕获的将要自动上报的错误。
+
+若是 Promise 发生了异常，被 rejected，那它的默认行为是将错误信息打印在控制台而不是将错误 “沉默的吞噬掉”：
+
+```js
+const p = Promise.reject('error msg').defer();
+
+foo(42)
+  .then(
+    function fulfilled() {
+      return p;
+    },
+    function rejected(err) {
+      // handle `foo(..)` error
+    }
+  );
+	
+```
+
+👆`defer()` 推迟了错误的处理，此时并不会报告任何错误的发生，而且它还会返回一个 Promise 以便于链式调用的进行。
+
+在 `foo()` 的返回的 Promise 的 `then(…)` 方法中，`fulfilled(…)` 返回的 `p` 没有再次 `defer()`，所以会立马将错误信息作为一个 uncaught error 打印到控制台上。
+
+这样的设计是成功的 —— 错误信息要么被捕获处理，要么被打印到控制台出来 —— 这符合大多数开发人员的预期，而且你也能推迟错误的处理，就比如 `Promise.reject('error msg').defer()`。
+
+而唯一的风险来自 `defer()` —— 当你延迟了错误的处理后，你居然最终忘记了处理 —— 你怪谁呢？
+
+## Promise 模式(Promise Patterns)
+
+
