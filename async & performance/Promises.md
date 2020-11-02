@@ -1078,3 +1078,177 @@ if (!Promise.first) {
 👆上面实现的 `Promise.race([…])` 和 `Promise.race([…])` 相比，其不会出现 reject 的状态，而若是你需要处理这样的情况，完全可以自己手动添加相应的处理逻辑。
 
 ### 并发迭代(Concurrent Iterations)
+通常情况下，迭代一个全部由同步任务构成的 Promise 组成的列表，没啥问题，就好像使用数组中的各种方法(`forEach(…)`、`map(…)`、`every(…)`、`some(…)`、`reduce(…)`……)，但若是要处理一组异步任务，且并发执行的情况，要么你选用第三方的工具，要么自己改造一下 `Promise.all(…)`：
+
+比如作者提供了一个挂载Promise对象下的 `map(…)` 方法，接受两个参数，一个由异步任务组成的数组，另一个是会每次迭代都被执行的回调，最终返回一个状态确定(fullfiled)的数组：
+
+```js
+if (!Promise.map) {
+  Promise.map = function (vals, cb) {
+    return Promise.all(
+      vals.map(function (val) {
+        return new Promise(function (resolve) {
+          cb(val, resolve);
+        })
+      })
+    );
+  }
+}
+```
+
+虽然你无法采用优雅的方式抛出异常(因为只传入了 resolve 作为回调函数的参数)，但若是在回调函数中发生了异常，那么整个 `Promise.map(…)` 会返回一个状态为 rejected 的 promise。
+
+回头看看如何使用：
+
+```js
+var p1 = Promise.resolve(21);
+var p2 = Promise.resolve(42);
+var p3 = Promise.reject('err msg');
+
+Promise.map([p1, p2, p3], function (val, done) {
+  Promise.resolve(val)
+    .then(
+      function (v) { done(v * 2); },
+      done
+    );
+})
+  .then(function (vals) {
+    console.info(vals); // [42, 84, "err msg"]
+  });
+```
+
+另外，在并发执行异步任务中，除了 `Promise.all([…])` 之外，也能使用 `async` + `for…of` 函数实现(有点超纲，不过后面也会讲到)：
+
+```js
+async function doConcurrent (vals, cb) {
+  const results = [];
+  const promises = vals.map(val => new Promise((resolve) => cb(val, resolve)));
+
+  for (let promise of promises) {
+    try {
+      results.push(await promise);
+    } catch (e) {
+      results.push(e);
+    }
+  }
+  return results;
+}
+```
+
+```js
+doConcurrent([p1, p2, p3], function (val, done) {
+  Promise.resolve(val)
+    .then(
+      function (v) { done(v * 2); },
+      done
+    );
+})
+  .then(function (vals) {
+    console.info(vals); // [42, 84, "err msg"]
+  })
+```
+
+## 关于 Promise API 的重要概述(Promise API Recap)
+这一节主要是回顾一下之前已经提到的一些 Promise API。
+
+此处作者也提及了关于他写的一个 [《native-promise-only》](http://github.com/getify/native-promise-only) 库的介绍，主要作用是做原生 Promise 的 polyfill。在其书写时候，ES6才刚发布不久，很多浏览器并没有实现这套规范，因此这个库显得十分重要且必要，但是时至今日，Promise 的实现早不是问题，因此其实用性有所下降，但一定也不妨碍我们学习他背后的思想和 code 的手法，这个才是精华。
+
+### new Promise(…) Constructor
+构造一个 Promise 的实例，关键字依然是 `new`，同时作为第一个必填的参数(回调函数)，它会被立即执行，并接受两个回调函数，作为确定该 promise 实例的状态，通常我们称其为 `resolve(…)` 和 `reject(…)`：
+
+```js
+var p = new Promise(function (resolve, reject) {
+  // resolve(…) -> fulfilled or rejected
+  // reject(…) -> rejected
+});
+```
+
+`reject(…)` 没啥好说的，就是把 Promise 的状态确定为 rejected；而 `resolve(…)` 则可能是 fulfilled 的状态或 rejected 的状态，这取决于传进去的参数是什么：
+  - 若传递的是 非 Promise、非 thenable 的值，那么一定是 fulfilled 的状态；
+
+  - 若传递的是 Promise 或 thenable 的值，那么就会一直递归去解析，到最后被确定的状态才是 `resolve(…)` 的状态(可能是 fulfilled 也可能是 rejected)；
+
+### Promise.resolve(…) 和 Promise.reject(…)
+`Promise.reject(…)` 是创建 rejected 状态的 Promise 的一个简写，比如下面👇的两个形式其实是等价的：
+
+```js
+var p1 = new Promise(function (resolve, reject) {
+  reject('err msg');
+});
+
+var p2 = Promise.reject('err msg');
+```
+
+而 `Promise.resolve(…)` 的状态也是不确定的，会根据传入的参数而决定，并且若是传入一个 Promise 的话，它会返回这个 Promise，因此当你不确定值的“类型”时，`Promise.resolve(…)` 是一个没有负担的选择：
+
+```js
+var fulfilledTh = {
+	then: function(cb) { cb(42); }
+};
+var rejectedTh = {
+	then: function(cb, errCb) {
+		errCb('err msg');
+	}
+};
+
+var p1 = Promise.resolve(fulfilledTh);
+var p2 = Promise.resolve(rejectedTh);
+```
+
+### then(…) 和 catch(…)
+每个 Promise 的实例都有 `then(…)` 和 `catch(…)` 方法，它们用来接收处理 fulfilled 或 rejected 状态的回调函数 —— 当然这都是异步的。
+
+`then(…)` 方法接收两个参数，第一个是用来处理 fulfillment 的回调，第二个则是处理 rejected 的回调，若是其中有一个被省略掉(或传入的是非函数类型的值)，那么就会有一个默认的回调函数来取代比如 `data => data` 或 `function (e) { return e; }`。
+
+
+`catch(…)` 方法只接受一个参数，同样的也会有默认参数，换句话讲，它其实就相当于 `then(null, …)`：
+
+```js
+p.then(fulfilled);
+
+p.then(fulfilled, rejected);
+
+p.catch(rejected); // 等于 p.then(null, rejected);
+```
+
+`then(…)` 和 `catch(…)` 都会创建并返回一个新的 Promise，而这也是链式回调的基础。
+
+如果传入它们的回调发生异常，那么返回的 Promise 的状态是 rejected；如果传入它们的回调返回非 Promise 和 非 thenable 的值，那么返回的 Promise 的状态是 fulfilled；而若是传入它们的回调返回了一个 Promise 或 thanble 的值，那会递归解析，直到最终的状态被确定。
+
+### Promise.all([…]) 和 Promise.race([…])
+区别
+
+`Promise.all([…])` 和 `Promise.race([…])` 两个静态方法都会创建并返回一个新的 Promise，而这个 Promise 的状态则取决于传入的数组参数：
+
+对 `Promise.all([…])` 而言，只有当你传入的数组中的所有 Promise 的状态都确定为 fulfilled，那么返回的 Promise 才是 fulfilled；而哪怕只有一个的状态确定为 rejected，那返回的 Promise 的状态都被定义为 rejected —— 这种模式被称为 gate —— 所有人都必须在大门开启前到达。
+
+而 `Promise.race([…])` 则是只有第一个确定的 Promise 的状态会作为返回的 Promise 的状态 —— 这样的模式被称为 latch —— 只有第一个抵达门闩的人才能够进入。
+
+```js
+const pArr = [
+  Promise.resolve(42),
+  Promise.resolve('Hello World'),
+  Promise.reject('err msg')
+];
+
+Promise.race(pArr)
+  .then(function(msg){
+    console.log(msg);		// 42
+  });
+
+Promise.all(pArr)
+  .catch(function(err){
+    console.error(err);	// "err msg"
+  });
+
+Promise.all(pArr.slice(0, 2))
+  .then(function(msgs){
+    console.log(msgs);	// [42, "Hello World"]
+  });
+```
+
+**Warning**：若是传入一个空数组作为参数时，`Promise.all([…])` 和 `Promise.race([…])` 表现的行为有差异：前者会直接返回一个 fulfilled 状态的 Promise，而后者则会永远的 pending 在那里！
+
+原生的 Promise 作为一个从回调地狱过度到新版的 JS 异步编程的良好开端是十分靠谱的，但它依然在某些情况下不能够很好的完全满足异步编程的需求，这也为一些基于 Promise 思想的库提供的驱动力。
+
+## Promise 的限制(Promise Limitations)
