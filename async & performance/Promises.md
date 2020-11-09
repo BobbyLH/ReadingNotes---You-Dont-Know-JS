@@ -1252,3 +1252,224 @@ Promise.all(pArr.slice(0, 2))
 原生的 Promise 作为一个从回调地狱过度到新版的 JS 异步编程的良好开端是十分靠谱的，但它依然在某些情况下不能够很好的完全满足异步编程的需求，这也为一些基于 Promise 思想的库提供的驱动力。
 
 ## Promise 的限制(Promise Limitations)
+虽然之前的内容中已经涵盖了这部分的一些内容，但是依然很有必要单独的将其罗列出来。
+
+### 异常处理的顺序(Sequence Error Handling)
+Promise 的链式调用仅仅是将一堆 Promise 组合起来的一种形式，因此你没办法仅通过一个实体，就能建立对 Promise 链的全部引用；而这也也意味着说，没有其他的办法能够监控到异常的发生。
+
+一旦 Promise 链中有错误发生，它就会无限的向下传播，直到遇到一个注册的异常处理方法 —— 在这种模式下
+
+```js
+const p = foo(42)
+  .then(STEP2)
+  .then(STEP3);
+```
+
+`p` 的指向的 Promise 并不是第一个 `foo(42)`，而是最后一个，即 `then(STEP3)` 的返回值，那即意味着你可以自行注册一个异常处理的方法：
+
+```js
+p.catch(handleErrors);
+```
+
+通常情况下👆都能很好的处理异常的问题，不过，若是在之前的其他步骤注册了异常处理的方法，这就缺失了一个通知 `handleErrors` 有异常已经被处理的机制。
+
+但这也不是只此一家 —— `try…catch` 同样也有类似的问题，`catch` 会将异常情况吞掉而没有任何形式的通知。
+
+由于不能对中间步骤的 Promise 保留引用，因此也没办法写出一个能够全面覆盖 Promise 异常情况的处理函数。
+
+### 单一的值(Single Value)
+根据定义，Promise 只能有一个单一的 fulfillment 或 rejection 的值。通常的解决办法是将多个值包裹在一个对象或数组中，而后再解析出来 —— 不仅很尴尬，而且很冗余。
+
+#### 值的分割(Splitting Values)
+有时候这也是一个让你将问题分解成多个 Promise 来处理的信号，就比如你有一个异步返回两个值的 `foo(…)` 方法：
+
+```js
+function getY(x) {
+	return new Promise(function (resolve, reject){
+		setTimeout(function (){
+			resolve((3 * x) - 1);
+		}, 100);
+	});
+}
+
+function foo(bar,baz) {
+	const x = bar * baz;
+
+	return getY(x)
+    .then(function (y){
+      return [ x,y ];
+    });
+}
+
+foo(10, 20)
+  .then(function (msgs){
+    const x = msgs[0];
+    const y = msgs[1];
+
+    console.log(x, y);  // 200 599
+  });
+```
+
+借助 `Promise.all([…])` 我们将👆
+
+```js
+function foo(bar,baz) {
+	const x = bar * baz;
+
+	return [
+		Promise.resolve(x),
+		getY(x)
+	];
+}
+
+Promise.all(
+	foo( 10, 20 )
+)
+  .then(function (msgs){
+    const x = msgs[0];
+    const y = msgs[1];
+
+    console.log(x, y);
+  });
+```
+
+但由 Promise 组成的数组就一定优于将一组值作为数组在一个 Promise 中返回吗？就语法而言，好像并没有！
+
+但这样的方式和 Promise 的实际思路的确更为贴切，也更容易组织和管理代码。不过显然解决的办法不止一种。
+
+#### 参数的扩展运算(Unwrap/Spread Arguments)
+有没有更讨巧的方式呢？社区中的大神随手一挥 —— `apply`：
+
+```js
+function spread(fn) {
+	return Function.apply.bind(fn, null);
+}
+
+Promise.all(
+	foo(10, 20)
+)
+  .then(
+    spread(function (x, y){
+      console.log(x, y);
+    })
+  );
+```
+
+ES6 显然也提供了另一种优雅的方式：
+
+```js
+Promise.all(
+	foo(10, 20)
+)
+  .then(
+    function (data) {
+      const [x, y] = data;
+      console.log(x, y);
+    }
+  );
+```
+
+但最好的莫过于 ES6 提供的对于函数参数的数组解构了：
+
+```js
+Promise.all(
+	foo(10, 20)
+)
+  .then(
+    function ([x, y]) {
+      console.log(x, y);
+    }
+  );
+```
+
+`one-value-per-Promise` 的特性的确恶心，不过好在也有解决方案。
+
+### 没有回头路(Single Resolution)
+众所周知，Promise 的状态一旦确定，就没办法更变，要么 fulfillment，要么 rejection —— 大多数的情况这是好事，但依然有局限，就比如 Promise 无法适应处理事件或者流的这种需要多次解析的情况，如按钮的点击事件：
+
+```js
+const p = new Promise(function (resolve,reject){
+  // `click(…)` 绑定了 DOM 上的 click 事件
+	click('#btn', resolve);
+});
+
+p
+  .then(function (evt){
+    const btnID = evt.currentTarget.id;
+    return request('http://some.url.1/?id=' + btnID);
+  })
+  .then(function (text){
+    console.log(text);
+  });
+```
+
+👆这样的事件处理只用使用一次，因为下次在点击事件触发的时候，`p` 的状态早已经被确定了。
+
+为了解决这个问题，你可能要转化一下范式 —— 每次事件被触发的时候都创建一个新的 Promise 链：
+
+```js
+click('#btn', function(evt) {
+	const btnID = evt.currentTarget.id;
+
+	requestrequest('http://some.url.1/?id=' + btnID)
+    .then(function (text){
+      console.log(text);
+    });
+});
+```
+
+👆先不管这样写的代码有多丑，这样的代码违反了 职责任分离(separation of concerns/capabilities SoC) 的原则 —— 就比如你想把事件注册和事件处理的代码逻辑分开，而这样的模式在没有其他 helper 方法的帮助下，显然没办法做到。
+
+**注意**：社区中也有很多对这样的限制的解决方案，就比如 [RxJS](https://archive.codeplex.com/?p=rxjs)。但问题在于这种解决方案一个是太重了，另一个是这样的第三方库是否遵循了 Promise 的 *trustable* 原则还未可知。
+
+### 惯性(Inertia)
+**A code base in motion (with callbacks) will remain in motion (with callbacks) unless acted upon by a smart, Promises-aware developer.** —— **想要打破现状总是很难的**
+
+Promise 不是一个一刀切(one-size-fits-all)的方案，想要将原来的异步回调函数的代码全部重构成 Promise 的代码，显然工作量很大，而且还容易出幺蛾子。
+
+但这并不意味着就不用 Promise 了，相反，社区中有很多开源的项目能够支持将代码 Promise化(Promisory)
+
+### 不可取消的 Promise(Promise Uncancelable)
+一旦你创建了一个 Promise，并且注册了处理方法在其中，就没办法取消了。
+
+**注意**：有很多的第三方库提供了取消 Promise 的工具，甚至有的开发者希望原生支持取消 Promise，但这其实是弊大于利的 —— 一旦你能够影响到 Promise 的结果，那么它就不在是 trustable 了，那就等于又回到了过去的回调函数的噩梦中去了。
+
+通常情况下，要实现 Promise 的 cancel 功能，只能通过在更高的抽象层次来解决：
+
+```js
+let OK = true;
+
+const p = foo(42);
+
+Promise.race([
+	p,
+	timeoutPromise(3000)
+    .catch( function(err){
+      OK = false;
+      throw err;
+    })
+])
+  .then(
+    doSomething,
+    handleError
+  );
+
+p
+  .then( function(){
+    if (OK) {
+      // 只有未超时才会触发
+    }
+  });
+```
+
+### Promise 的性能(Promise Performance)
+Promise 肯定会比相同代码的 回调函数 慢一丢丢 —— 加了一层中间层不慢怎么可能。但这样的性能比较真的没太多意思，最起码你也应该用 带有处理信任问题的回调函数 和 Promise 比较才有意义不是么？
+
+而问题的核心不在于比较性能的优劣，而在于若是你真的差那么一丢丢的性能才能解决问题的话，那你为何不用效率更高的语言(比如 `C++`)来代替JS，从而实现你的需求呢？
+
+况且，就算是慢了一些，但 Promise 带来的优势，比如可信任、链式调用等，从任何角度看都是一笔划算的买卖。即便是有诸多的限制，但兴许是你不理解 Promise 带来的好处才会考虑的吧？！
+
+## 回顾(Review)
+Promise 主要解决的问题是回调函数的控制反转，从而导致信任缺失的问题。它并没有摆脱回调函数，它只是在我们的代码和第三方库之间作为一个可信任的中间者，帮助我们解决问题。
+
+Promise 的链式调用当然也部分优化了异步代码的控制流，但显然还不够。
