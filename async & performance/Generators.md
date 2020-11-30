@@ -149,3 +149,140 @@ res.value; // 得到服务端最终生成的值
 这种通过 `yield` 和 `next(…)` 实现的通信机制非常强大，但离异步流程控制好像还有点距离？！别急，接着看下去。
 
 ### 多个迭代器(Multiple Iterators)
+每次调用 genenrator 函数，都会创建一个新的 iterator 实例，即意味着你能同时创建多个 iterator 的实例，而且它们还能相互作用：
+
+```js
+function *foo() {
+  var x = yield 2;
+  z++;
+  var y = yield (x * z);
+  console.log(x, y, z);
+}
+
+var z = 1;
+
+var it1 = foo();
+var it2 = foo();
+
+var val1 = it1.next().value; // 2
+var val2 = it2.next().value; // 2
+
+val1 = it1.next(val2 * 10).value; // 40
+val2 = it2.next(val1 * 5).value; // 600
+
+it1.next(val2 / 2); // 2 300 3
+it2.next(val1 / 4); // 200 10 3
+
+```
+
+👆上面的逻辑有点绕，而且也没人会在真实的开发中这么做，但并不妨碍我们将它作为一个案例来研究多个 iterator 的实例能够实现互相影响的现象。
+
+简单分析下过程：
+1. `it1` 和 `it2` 是两个由 `*foo` 创建的 iterator 实例，它们第一次调用的 `next()` 方法并获取返回值中的 `value` 属性时，其结果都是 `2`；
+
+2. `val2 * 10` 就相当于 `2 * 10`，其结果 `20` 作为参数传递给 `it1`，并将其赋值给变量 `x`，而后变量 `z` 自增的结果是 `2`，因此 `x * z` 的结果相当于 `20 * 2` 即 `40`，并将其作为返回值复制给 `val1`；
+
+3. `val1 * 5` 相当于 `40 * 5` 即 `200`，并作为参数传入 `it2` 中，此时 `it2` 会经历 `it1` 的步骤，只是 `x` 和 `z` 数值发生了变化，分别是 `200` 和 `3`，因此最终 `val2` 的值变成了 `600`(来自 `yield (x * z)` 的返回值)；
+
+4. `val2 / 2` 的结果 `300` 作为参数再一次传递到 `it1` 中，而后赋值给了 `y`，因此 `it1` 最终打印的结果是 `2 300 3`；
+
+5. 同理可得 `val1 / 4` 的结果为 `40 / 4`，而后传入 `it2`，打印的结果为 `200 10 3`
+
+
+#### 交错进行(interleaving)
+回顾下之前提到的普通函数的运行模式：
+
+```js
+var a = 1;
+var b = 2;
+
+function foo () {
+  a++;
+  b = b * a;
+  a = b + 3;
+}
+
+function bar () {
+  b--;
+  a = 8 + b;
+  b = a * 2;
+}
+```
+
+👆上面的代码无论是 `foo` 或 `bar` 先执行，最终都只能得到两种不一样的结果。但是，若我们使用 generator 函数改造一下，那就能得到很多不一样的结果：
+
+```js
+var a = 1;
+var b = 2;
+
+function *foo() {
+  a++;
+  yield;
+  b = b * a;
+  a = (yield b) + 3;
+}
+
+function *bar() {
+  b--;
+  yield;
+  a = (yield 8) * b;
+  b = a * (yield 2);
+}
+```
+
+👆 `*foo()` 和 `*bar()` 不同的调用顺序会产生不一样的结果，而用这个特性来模拟 “线程竞争(threaded race conditions)” 也是可行的 —— 比如这个函数有副作用，依赖全局变量啥的：
+
+先实现一个工具函数用来简化 iterator 的执行：
+
+```js
+function step (gen) {
+  var it = gen();
+  var last;
+
+  return function () {
+    last = it.next(last).value;
+  }
+}
+```
+
+接下来，仅仅是为了实验的目的，我们再实现因多个 iterator 交互而相互影响的例子：
+
+```js
+a = 1;
+b = 2;
+
+var s1 = step(foo);
+var s2 = step(bar);
+
+s1();
+s1();
+s1();
+
+s2();
+s2();
+s2();
+s2();
+
+console.log(a, b); // 11 22
+```
+
+若是你真的理解了 generator 函数的执行机制，那得出结果并不困难。若是调换一下 `s1()` 和 `s2()` 的调用顺序的话，结果会又不一样：
+
+```js
+// ……
+s1();
+s2();
+s2();
+s1();
+s2();
+s1();
+s2();
+// ……
+```
+
+👆 通过 generator 改造，其最终可能的结果的个数，和普通函数只有两个结果相比起来大大增加。不过，通常我们并不会这么写代码，但这个 “并发” 的能力其实有大用处，后面细说。
+
+## Generator生成的值(Generator'ing Values)
+之前的一些尝试只是开胃菜，要搞清楚 generator 的原理，依然需要一步步的分析实现的细节，譬如我们先从 iterator 入手。
+
+### 制造者和迭代器(Producers and Iterators)
