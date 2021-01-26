@@ -988,3 +988,209 @@ generator 的代理机制，最主要的功能是让基于 generator 代码的�
 而若是没有 `yield *` 的语法，想要实现在 `bar` 中 执行 `foo`，那就少不了用到类似 `run(…)` 这样的 helper 函数。这无疑增加了程序的复杂程度，降低了代码的可维护性。
 
 ### 代理信息(Delegation Messages)
+看下面的例子了解下 generator 函数，和它生成的迭代器，是如何在执行的过程中，实现信息的交互的：
+
+```js
+function *foo() {
+  console.log('inside *foo:', yield 'B');
+
+  console.log('inside *foo:', yield 'C');
+
+  return 'D';
+}
+
+function *bar() {
+  console.log('inside *bar:', yield 'A');
+
+  console.log('inside *bar:', yield *foo());
+
+  console.log('inside *bar:', yield 'E');
+
+  return 'F';
+}
+
+var it = bar();
+
+console.log('outside:', it.next().value);
+// outside: A
+
+console.log('outside:', it.next(1).value);
+// inside *bar: 1
+// outside: B
+
+
+console.log('outside:', it.next(2).value);
+// inside *foo: 2
+// outside: C
+
+console.log('outside:', it.next(3).value);
+// inside *foo: 3
+// inside *bar: D
+// outside: E
+
+console.log('outside:', it.next(4).value);
+// inside *bar: 4
+// outside: F
+```
+
+👆其他的过程都还好说，重点分析下当调用 `it.next(3)` 时，实际发生的整个过程：
+
+  1. 数字 `3` 被当做值传递进了 `*bar()` 中，通过 generator 代理，进而传递给了 `*foo()` 的迭代器，并最终作为 `yield 'C'` 生成的值；
+
+  2. 接下去，在 `*foo()` 中执行的是 `return 'D'` 这段语句，但返回值 `D` 并不会成为 `it.next(3)` 的值，而是作为 `*yield *foo()` 生成的值；
+
+  3. 继续下去，当遇到 `yield 'E'` 的时候，generator 函数又会停止执行，并把 `E` 作为 `it.next(3)` 的 `value` 输出……
+
+从外部 iterator(it) 的使用方式来看，在处理被代理的 generator 和其本身的时候，并没有什么区别。
+
+实际上，`yield`-delegation 在处理非 generator 函数而是一个定义了 iterator 接口的可迭代对象时，也不会有任何区别：
+
+```js
+function *bar() {
+  console.log('inside *bar:', yield 'A');
+
+  console.log('inside *bar:', yield *['B', 'C', 'D']);
+
+  console.log('inside *bar:', yield 'E');
+
+  return 'F';
+}
+
+var it = bar();
+
+console.log('outside:', it.next().value);
+// outside: A
+
+console.log('outside:', it.next(1).value);
+// inside *bar: 1
+// outside: B
+
+console.log('outside:', it.next(2).value);
+// outside: C
+
+console.log('outside:', it.next(3).value);
+// outside: D
+
+console.log('outside:', it.next(4).value);
+// inside *bar: undefined
+// outside: E
+
+console.log('outside:', it.next(5).value);
+// inside *bar: 5
+// outside: F
+```
+
+唯一的区别在于，`array` 默认的迭代器没有针对消息传递做任何的处理，因此导致的结果是任何通过 `next(…)` 传递的参数都被无视了，并且没有任何的 `return` 值导致 `yield *` 表达式只能获得 `undefined` 作为返回值(`inside *bar: undefined`)。
+
+#### 代理的异常处理(Exception Delegated, Too!)
+异常处理在 `yield`-delegation 中当然也不能缺席：
+
+```js
+function *foo() {
+  try {
+    yield 'B';
+  }
+  catch (err) {
+    console.log('error catch inside *foo:', err);
+  }
+
+  yield 'C';
+
+  throw 'D';
+}
+
+function *bar() {
+  yield 'A';
+
+  try {
+    yield *foo();
+  }
+  catch (err) {
+    console.log('error catch inside *bar:', err);
+  }
+
+  yield 'E';
+
+  yield *baz();
+
+  return 'G';
+}
+
+function *baz () {
+  throw 'F';
+}
+
+var it = bar();
+
+console.log('outside:', it.next().value);
+// outside: A
+
+console.log('outside:', it.next(1).value);
+// outside: B
+
+console.log('outside:', it.throw(2).value);
+// error catch inside *foo: 2
+
+console.log('outside:', it.next(3).value);
+// error catch inside *bar: D
+// outside: E
+
+try {
+  console.log('outside:', it.next(4).value);
+}
+catch (err) {
+  console.log('error catch outside:', err);
+}
+// error catch outside: F
+```
+
+有几点需要强调的是：
+  1. 当调用 `it.throw(2)` 的时候，数字 `2` 被作为 error message 传递到 `*bar()` 中，而后被 `catch` 捕获到。最终 `yield 'C'` 将 `C` 作为 `it.throw(2)` 的 `value` 返回；
+
+  2. `* foo()` 最后的语句是 `throw 'D'`，而这个 error message 同样也被外层 `* bar` 的 `catch` 捕获到，而 `yield 'E'` 会继续将 `E` 作为 `it.next(3)` 的 `value` 值返回；
+
+  3. 而后继续执行 `it.next(4)`，这一次代理了 `*baz`，而它直接 `throw 'F'`，并且这一路上没有任何的 `try…catch` 处理，因此最终冒泡到最外部的 `try…catch` 中，而此时 `*baz` 和 `*bar` 的状态都是执行完成，因此接下去再调用 `it.next()` 返回的 `value` 不会是 `G`，而只能是 `undefined`。
+
+### yield 代理的递归(Delegation "Recursion")
+在 generator 函数中，利用 `yield`-delegation 递归的调用自己，也是合理合法的一件事：
+
+```js
+function *foo(val) {
+  if (val > 1) {
+    val = yield *foo(--val);
+  }
+
+  return yield request('http://some.url?v=' + val)
+}
+
+function *bar() {
+  var r1 = yield *foo(3);
+
+  console.log(r1);
+}
+
+run(bar);
+```
+
+别看代码行数很短，但代码执行的过程十分复杂，详细的步骤分析如下：
+  1. `run(bar)` 开始执行 `*bar`；
+
+  2. `*foo(3)` 代理 generator `foo`，而后创建一个迭代器，并将 `3` 作为参数传递；
+
+  3. `3 > 1` -> `foo(2)` -> 又新创建了一个迭代器，将 `2` 作为参数递归调用 `*foo(2)`；
+
+  4. `2 > 1` -> `foo(1)` -> 又新创建了一个迭代器，将 `1` 作为参数递归调用 `*foo(1)`；
+
+  5. `1 > 1` 为 `false`，因此调用 `request('http://some.url?v=' + 1)`，并返回一个 Promise；
+
+  6. 这个 Promise 被 `yield` 返回，到了 `*foo(2)` 的手上；
+
+  7. 继续下去，这个 Promise 再次被 `yield` 传递到 `*bar` 的 `*foo(3)` 手中，而此时 `*bar` 是作为 `run` 的参数被其实例化成一个 iterator 迭代器在自动执行。因此，这个 Promise 是作为某次调用 `next()` 的 `value` 被放到 `Promise.resolve(next().value)` 中等待 Ajax 请求完成，进而再执行后续的 `then()`；
+
+  8. 当这个 Ajax 完成时，意味着 Promise 被 resolve 了，那么在 `run` 中会继续调用 `it.next()`，进而恢复 `*bar()` 的执行，并把网络请求的返回值作为参数传递到 `*foo(3)` 生成的 iterator 中，这个参数沿着代理链路一直传递到 `*foo(2)` 中，并作为 `yield` 的值赋值给 `val` 变量；
+
+  9. 接下去第二个 Ajax 网络请求又会发起，同样这个 Promise 又会层层传递，先经过 `*foo(3)` 手中，最终到 `Promise.resolve(…)` 中，而后当这个请求返回时，它的返回值又会作为参数层层传递，并被赋值给 `val`，而后发起第三个 Ajax 请求；
+
+  10. 最终，当第三个请求也完成后，它的返回值会被作为 `yield *foo(3)` 所生成的值赋值给 `r1`，而后被打印出来，最终结束整个 `run` 的运行。
+
+## Generator 的并发(Generator Concurrency)
