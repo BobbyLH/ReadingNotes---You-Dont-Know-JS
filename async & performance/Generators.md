@@ -1194,3 +1194,141 @@ run(bar);
   10. 最终，当第三个请求也完成后，它的返回值会被作为 `yield *foo(3)` 所生成的值赋值给 `r1`，而后被打印出来，最终结束整个 `run` 的运行。
 
 ## Generator 的并发(Generator Concurrency)
+坦白讲，之前关于 Generator 的并发方案，都显得乱糟糟的，不过这样也埋了个伏笔。接下来就看看 Generator 到底是如何将这个能力是如何大放光彩的。
+
+简单回顾下 [第一节](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/blob/master/async%20%26%20performance/Now%20%26%20Later.md#%E6%9C%89%E4%BA%A4%E4%BA%92interaction) 中提到的 Ajax 按顺序处理响应的方案：
+
+```js
+function response(data) {
+	if (data.url == "http://some.url.1") {
+		res[0] = data;
+	}
+	else if (data.url == "http://some.url.2") {
+		res[1] = data;
+	}
+}
+```
+
+若是想借用多个 Generator，来实现同样的需求的话：
+
+```js
+var res = [];
+
+function *reqData(url) {
+  res.push(yield request(url));
+}
+```
+
+👆 避免了手动指定 `res[0]`、`res[1]`，利用 `res.push(…)` 的特性，来保证插槽内的值是按顺序插入的。
+
+具体的交互，结合 Promise(本质上是用 Promise 的链式调用的顺序，来保证最终结果的顺序)，手动实现：
+
+```js
+var it1 = reqData('http://some.url.1');
+var it2 = reqData('http://some.url.2');
+
+var p1 = it1.next().value;
+var p2 = it2.next().value;
+
+p1
+  .then(function (data) {
+    it1.next(data);
+    return p2;
+  })
+  .then(function (data) {
+    it2.next(data);
+  })
+```
+
+👆 `reqData(…)` 生成的两个迭代器实例几乎是同一时刻发送了 Ajax 请求，并进行迭代，返回了 Promise 对象；当第一个 Promise 对象 `p1` resolve 后，将请求的值通过 `next(…)` 传递回迭代器，并 `push` 到 `res` 数组中，确保了插入到 `res[0]` 中。接下去，返回 `p2`，最终的请求值插入到 `res[1]` 中。
+
+说句老实话，要是每次都非得这样来实现，还不如不用 Generator！因此，一定有比上面这个更优雅的方式：
+
+```js
+var res = [];
+
+function *reqData(url) {
+  var data = yield request(url);
+
+  yield; // 交出控制权，方便自定义插入 res 的顺序
+
+  res.push(data);
+}
+
+var it1 = reqData('http://some.url.1');
+var it2 = reqData('http://some.url.2');
+
+var p1 = it1.next().value;
+var p2 = it2.next().value;
+
+p1
+  .then(function (data) {
+    it1.next(data);
+  });
+
+p2
+  .then(function (data) {
+    it2.next(data);
+  });
+
+Promise.all([ p1, p2 ])
+  .then(function () {
+    // 到这里才决定了插入 res 的顺序
+    it1.next();
+    it2.next();
+  });
+```
+
+👆 即便依然得手动实现，但确实比之前有了很大的进步 —— 至少两个 `*reqData(…)` 的执行，都是真正的并发了 —— 不像之前，在 `p1` 完全完成之前，`p2` 都没办法获取到请求返回的数据。而改写后的 `*reqData(…)` 中的第二个 `yield` 的作用，仅仅是为了控制数据存放的顺序。
+
+据此，我们可以实现一个 `runAll(…)` utility，来帮助我们更好的组织代码：
+
+```js
+function reqData(url) {
+  return function *(store) {
+    var store = yield request(url);
+
+    yield;
+
+    store.res.push(data);
+  }
+}
+
+function runAll () {
+  var store = {
+    res: [],
+    it: [],
+    p: []
+  };
+
+  var gens = Array.prototype.slice.call(arguments);
+
+  for (let i = 0; i < gens.length; i++) {
+    const gen = gens[i];
+    const it = gen(store);
+    store.it.push(it);
+    const p = it.next().value;
+    store.p.push(p);
+    p.then(function (data) { it.next(data) });
+  }
+
+  Promise.all(store.p)
+    .then(function () {
+      store.it.forEach(it => it.next());
+    });
+
+  return store.res;
+}
+```
+
+
+最终，只需要简单的调用便可完成：
+
+```js
+runAll(
+  reqData('http://some.url.1'),
+  reqData('http://some.url.2')
+);
+```
+
+## Thunks
