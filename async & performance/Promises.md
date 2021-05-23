@@ -1411,7 +1411,7 @@ p
 click('#btn', function(evt) {
 	const btnID = evt.currentTarget.id;
 
-	requestrequest('http://some.url.1/?id=' + btnID)
+	request('http://some.url.1/?id=' + btnID)
     .then(function (text){
       console.log(text);
     });

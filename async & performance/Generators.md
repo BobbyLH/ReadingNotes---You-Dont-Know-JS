@@ -1332,3 +1332,83 @@ runAll(
 ```
 
 ## Thunks
+在计算机科学中，**"thunk"** 是一个比 JS 更古老的概念，狭义的解释是 **一个包裹了另外的函数(原函数)，且不需要任何参数的函数(thunk)**。本质来看，thunk 起的作用就是为了延迟原函数的执行：
+
+```js
+function foo (x, y) {
+  return x + y;
+}
+
+function fooThunk () {
+  return foo(3, 4);
+}
+
+console.log(fooThunk()); // 7
+```
+
+同步的 thunk 的实现，看上去很简单，那么要实现异步的 thunk 呢？显然用回调函数来实现是一种常见的办法：
+
+```js
+function foo (x, y, cb) {
+  setTimeout(function () {
+    cb(x + y);
+  }, 1000);
+}
+
+function fooThunk (cb) {
+  foo(3, 4, cb);
+}
+
+fooThunk(function (sum) {
+  console.log(sum);
+});
+```
+
+不过，每次需要手动实现 `fooThunk` 挺麻烦，因此不妨实现一个工具函数来避免重复劳动：
+
+```js
+function thunkify(fn) {
+  var arg = [].slice.call(arguments, 1);
+  return function (cb) {
+    args.push(cb);
+    return fn.apply(null, args);
+  }
+}
+
+var fooThunk = thunkify(foo, 3, 4);
+
+fooThunk(function (sum) {
+  console.log(sum);
+});
+```
+
+但是在 JS 中，经典地实现 `thunkify(…)` 其实还需要再包裹一层，以至于 `thunkify(…)` 只返回一个函数，而真正的 thunk 是调用这个返回的函数生成：
+
+```js
+function thunkify(fn) {
+  return function () {
+    var args = [].slice.call(arguments);
+    return function (cb) {
+      args.push(cb);
+      return fn.apply(null, args);
+    }
+  }
+}
+
+var fooThunkory = thunkify(foo);
+
+var fooThunk1 = thunkify(3, 4);
+var fooThunk2 = thunkify(5, 6);
+
+fooThunk1(function (sum) {
+  console.log(sum);  // 7
+});
+
+fooThunk2(function (sum) {
+  console.log(sum);  // 11
+});
+```
+
+👆🏻 除了多一步调用之外，好像并没有什么差别。但实际上，多出的这一步，返回的这个函数，更应被称为 "thunkory"("thunk" + "factory")。别以为多出的这一步不仅冗余，而且还增加了程序的复杂性，但实际上，多出的这一步，能够很好的将逻辑和数据区分。
+
+## Pre-ES6 Generators
