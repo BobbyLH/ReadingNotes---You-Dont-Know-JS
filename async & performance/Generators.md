@@ -1412,3 +1412,148 @@ fooThunk2(function (sum) {
 👆🏻 除了多一步调用之外，好像并没有什么差别。但实际上，多出的这一步，返回的这个函数，更应被称为 "thunkory"("thunk" + "factory")。别以为多出的这一步不仅冗余，而且还增加了程序的复杂性，但实际上，多出的这一步，能够很好的将逻辑和数据区分。
 
 ## Pre-ES6 Generators
+虽然时过境迁，Generators 的兼容性在现代的大部分浏览器环境中不再是问题，但是通过了解如何解决 ES6 兼容性，也能帮助我们更好的理解其本质。
+
+### 手动转换(Manual Transformation)
+先看一段用 generator 实现的网络请求：
+
+```js
+function *foo (url) {
+  try {
+    console.log('request url is: ', url);
+    const val = yield request(url);
+    console.log(val);
+  } catch (err) {
+    console.error('Oops: ', err);
+    return false;
+  }
+}
+```
+
+接着就是将 `*foo` 转换成普通的函数实现 —— 以 `yield` 为起点，将函数的内容拆分成多个步骤，每个步骤执行一段 起始->暂停 逻辑；而后利用比闭包来保存当前的状态，以便恢复执行时能够以正确的状态运行正确的步骤；最后再实现 `next` 和 `throw` 等方法：
+
+```js
+function foo (url) {
+  // 闭包保存变量
+  let state, val;
+
+  // 将整个函数内容，以 yield 为界线，拆分成一个个的步骤
+  function process(v) {
+    switch (state) {
+      case 1:
+        console.log('request url is: ', url);
+        return request(url);
+      case 2:
+        val = v;
+        console.log(val);
+        return;
+      case 3:
+        const err = v;
+        console.error('Oops: ', err);
+        return false;
+    }
+  }
+
+  return {
+    next: function (v) {
+      if (!state) {
+        state = 1;
+        return {
+          done: false,
+          value: process()
+        };
+      } else if (state === 1) {
+        state = 2;
+        return {
+          done: true,
+          value: process(v)
+        };
+      } else {
+        return {
+          done: true,
+          value: void 0
+        };
+      }
+    },
+    throw: function (e) {
+      if (state === 1) {
+        state = 3;
+        return {
+          done: true,
+          value: process(e)
+        };
+      } else {
+        throw e;
+      }
+    }
+  }
+}
+
+const it = foo('http://some.url.1');
+const { value } = it.next();
+value.then(
+  res => it.next(res),
+  err => it.throw(err)
+);
+```
+
+👆上面的整个工作过程可以简述成：
+
+1. 调用 `foo(…)` 拿到返回的对象(模拟的迭代器)，其中利用闭包保存了 `state` 和 `val` 两个变量；
+
+2. 调用 `next()` 方法，当前的 `state` 会被赋值 `state = 1`，而后运行 `process()`，进入到网络请求的步骤1中，并且将其作为 value 值返回；
+
+3. 接下去，若是请求成功，调用 `it.next(…)`，若是请求失败，调用 `it.throw(…)`，最终的 `state` 要么是 `2`，要么是 `3`，而后进入 `process` 对应的步骤中，完成整个过程。
+
+### 自动编译(Automatic Transpilation)
+要每次都得自己去实现这套兼容的逻辑，那还不如不用 generator。所以社区实现并开源了编译工具，能将重复造轮子的工作省去，就比如用 [facebook-regenerator](https://facebook.github.io/regenerator/) 来将我们之前的代码编译的话：
+
+```js
+var _marked =
+/*#__PURE__*/
+regeneratorRuntime.mark(foo);
+
+function foo(url) {
+  var val;
+  return regeneratorRuntime.wrap(function foo$(_context) {
+    while (1) {
+      switch (_context.prev = _context.next) {
+        case 0:
+          _context.prev = 0;
+          console.log('request url is: ', url);
+          _context.next = 4;
+          return request(url);
+
+        case 4:
+          val = _context.sent;
+          console.log(val);
+          _context.next = 12;
+          break;
+
+        case 8:
+          _context.prev = 8;
+          _context.t0 = _context["catch"](0);
+          console.error('Oops: ', _context.t0);
+          return _context.abrupt("return", false);
+
+        case 12:
+        case "end":
+          return _context.stop();
+      }
+    }
+  }, _marked, null, [[0, 8]]);
+}
+```
+
+`regeneratorRuntime` 工具函数，是抽象出来的一套可以复用的逻辑。但可以看到的是，其内部的具体函数实现，和我们手动转化的逻辑差别不大，同样是利用 闭包 + 状态机 的模式，来拆分函数步骤，保存函数状态 —— 比如同样用到了 `_context.next = 4;` 来保持状态的跟踪。
+
+## 回顾(Review)
+Generator 是 ES6 中出现的新的函数类型，和普通的函数只能一口气执行到底(run-to-completion)不同，generator 能够在执行过程中暂停，保存当前的执行状态，而后在需要的时候恢复执行过程。
+
+暂停 / 恢复 之间的交互，不是先发制人，而是相互合作的 —— generator 只有一个暂停的能力，方法是在其内部使用 `yield` 关键字；而外部的 iterator 迭代器，也只有一个恢复的能力，即通过调用定义在其中的 `next(…)` 方法。
+
+`yield` 和 `next(…)` 的任务并不仅仅是一套控制机制，更是一套信息交互机制 —— `yield` 表达式本质是暂停函数运行，而后等待数据的传入；而调用 `next(…)` 的时候传入的值，会返回给暂停的 `yield` 表达式。
+
+以符合时间先后顺序的方式写出异步代码，这是 Generator 最核心的作用 —— 在 `yield` 后隐藏的细节是将异步过程的控制权移交给了外部的 iterator 迭代器。
+
+换句话讲，generator 能让我们以同步的方式书写异步的代码，这会让我们更好的理清思路，也更贴合大脑的工作模式，同时解决了回调函数的两个缺点之一。
