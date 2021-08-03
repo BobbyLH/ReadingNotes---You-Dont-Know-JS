@@ -15,3 +15,5 @@
 - [Promises](/async%20%26%20performance/Promises.md) (Promises)
 
 - [Generators](/async%20%26%20performance/Generators.md) (Generators)
+
+- [程序的性能](/async%20%26%20performance/Program%20Performance.md) (Program Performance)
