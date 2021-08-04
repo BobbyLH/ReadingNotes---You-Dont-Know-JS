@@ -67,3 +67,25 @@ postMessage('someting from worker!');
 **Note**：无论你有意还是无意地创建了几百上千个 Worker，这都不会造成DOS(denial-of-service)攻击的核心原因在于说，系统可以自由地决定实际使用的 线程/CPU核数 来运行这些 Worker —— 虽然目前没有任何方式能够保证 Worker 最终使用的实际资源数量，但至少不会在主线程中运行。
 
 ### Worker Environment
+Worker 线程是一个完全独立的线程，即意味着说你完全没办法访问主线程中的任何资源 —— 无论是全局变量亦或DOM元素。当然，一些基本的诸如网络的 Ajax、Fetch、WebSockets 操作，以及定时器不受影响。而且，一些重要的全局对象，比如 `navigator`、`location`、`JSON` 等都有一份拷贝可供使用。
+
+值得一提的是，`importScripts(…)` 这个在 Worker 中的全局 API，能帮助你加载额外的 JS 资源：
+
+```js
+// Worker 中
+importScripts('a.js', 'b.js');
+```
+
+不过，`importScripts(…)` 的加载过程是同步执行的，即意味着它会阻塞后续代码的执行，直到所有的资源都加载完毕。
+
+Web Worker 常见的用途包括但不限于以下这些：
+
+- 处理密集型的计算
+
+- 为较大的数据组做排序
+
+- 数据相关的操作(压缩、音频分析、图片像素操作……)
+
+- 大流量的网络通讯
+
+### 数据传输(Data Transfer)
