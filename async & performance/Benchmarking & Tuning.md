@@ -44,3 +44,47 @@ console.log('Duration: ', end - start);
 这些仅仅是开始而已，而若是你觉得太麻烦了，能不能省点事，那很遗憾的告诉你 —— "you don't know: proper benchmarking."
 
 ### Benchmark.js
+统计学是讨论基准所必备的基础知识，如果你对 “标准差”、“方差”、“误差范围”、“置信区间”…… 这些术语感到陌生，不妨回顾下大学本科时的统计学，曾经教授过的这些基本概念。
+
+当然，伟大的社区早已经有人贡献了方便趁手的工具，就叫 [Benchmark.js](http://benchmarkjs.com/)，所以直接拿来用没啥不好的：
+
+```js
+function foo () {
+	// some code
+}
+
+var bench = new Benchmark(
+	'foo test',
+	foo,
+	{
+		// ...     // options
+	}
+);
+
+bench.hz; // 每秒执行代码的数量
+bench.stats.mean; // 算数平均数
+bench.stats.moe; // 误差范围
+bench.stats.variance; // 样本方差
+bench.stats.deviation; // 样本标准差
+```
+
+毫不夸张的讲，Benchmark.js 是任何一个初次踏入JS代码的性能基准测试领域的开发者，都应该去尝试使用的一个库，👆🏻上面的示例仅仅是这个库的冰山一角，而诸如比较两个单独的代码块 X 和 Y 到底谁更快时，Benchmark.js 提供了一个叫做 "Suite" 的结构，你能够直接运行它们，而后就能拿到哪个更快的数据了。
+
+无论是在浏览器还是在 Node.js 环境中，Benchmark.js 都提供了良好的支持。
+
+另一个值得花时间考虑的方向是 性能回归测试 领域，就如同单元测试一样，在你的项目中书写好性能测试的用例，而后每次在项目部署前，都自动运行性能测试，以此达到自动监控本次提交的代码，是否对项目的性能造成了影响。
+
+### Setup/Teardown
+在初始化 Benchmark.js 的时候，第三个参数能够传递一些可选的配置项，其中有两个选项值得花时间讨论一番：`setup` 和 `teardown`。
+
+Benchmark.js 的文档中是这么描述这两个选项的：
+- `setup`: compiled/called before the test loop
+
+- `teardown`: compiled/called after the test loop
+
+这两个选项定义了在你测试代码运行之前，或者运行结束后的回调函数。但是要明白，它们不会在每次迭代的过程中都执行，而只会开始或者结束的时候，执行一次。
+
+强调这一点是因为在某些涉及到 DOM 的测试中，比如往某个元素中追加子元素的操作，此时若是在 `setup` 或者 `teardown` 中有重置父元素的动作是无效的，而最终的结果是会导致DOM元素累积的越来越多，最终让测试的数据和实际的数据产生严重的背离。
+
+## 注意上下文环境(Context Is King)
+一个容易被忽视的地方：如果测试的结果是 X 比 Y 快，那么就一定能说 X 比 Y 快么？这仅仅是实验室的数据，别忘记你真实运行代码的时候，都是在一套独特的上下文环境中进行的 —— 比如在用户的某个版本的操作系统下的某个浏览器中。
