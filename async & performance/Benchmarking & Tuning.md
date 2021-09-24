@@ -255,7 +255,7 @@ var foo = 41;
 })();
 ```
 
-三层嵌套的 IIFE 可能会让你头晕，而你也许会认为JS引擎找到变量 `foo` 的引用，也需要往外找三层，即便是我们之前在讲关于 [作用域和闭包](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/blob/master/scope%20%26%20closures/lexical.md) 的时候，了解到编译器通常会缓存查找到的引用，因此不会有太多额外的开销。
+三层嵌套的 IIFE 可能会让你头晕，而你也许会认为JS引擎找到变量 `foo` 的引用，也需要往外找三层 —— 即便是在，我们之前在讲关于 [作用域和闭包](https://github.com/BobbyLH/ReadingNotes---You-Dont-Know-JS/blob/master/scope%20%26%20closures/lexical.md) 的时候，了解到编译器通常会缓存查找到的引用，因此不会有太多额外的开销的情况下。
 
 但不妨做个思想实验，如果你是编译器的开发者，当你看到 `foo` 完全没被别的地方引用，而且之后也没有任何的赋值操作，把它写死不好吗：
 
