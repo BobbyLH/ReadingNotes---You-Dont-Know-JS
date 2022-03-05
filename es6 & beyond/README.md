@@ -12,20 +12,20 @@ ES6的全称是ECMAScript2015，也可称为ES2015，它是指代由 ECMA 这个
 除了这些不断迭代的规范之外，WebAssembly(WASM) 更是各大浏览器厂商，争先恐后进入的领域。而让浏览器能够像服务器一样，运行各种性能高效，功能强大的代码，显然不再是遥不可及的梦想。
 
 ### 导航
-- [ES? 现在 & 未来]() (ES? Now & Future)
+- [ES? 现在 & 未来](/es6%20%26%20beyond/ES%20Now%20%26%20Future.md) (ES? Now & Future)
 
-- [语法]() (Syntax)
+- [语法](/es6%20%26%20beyond/Syntax.md) (Syntax)
 
-- [代码的组织]() (Organization)
+- [代码的组织](/es6%20%26%20beyond/Organization.md) (Organization)
 
-- [异步控制流]() (Async Flow Control)
+- [异步控制流](/es6%20%26%20beyond/Async%20Flow%20Control.md) (Async Flow Control)
 
-- [结构化数据]() (Collections)
+- [结构化数据](/es6%20%26%20beyond/Collections.md) (Collections)
 
-- [新增的API]() (API Additions)
+- [新增的API](/es6%20%26%20beyond/API%20Additions.md) (API Additions)
 
-- [元编程]() (Meta Programming)
+- [元编程](/es6%20%26%20beyond/Meta%20Programming.md) (Meta Programming)
 
-- [除了ES6之外]() (Beyond ES6)
+- [除了ES6之外](/es6%20%26%20beyond/Beyond%20ES6.md) (Beyond ES6)
 
 
