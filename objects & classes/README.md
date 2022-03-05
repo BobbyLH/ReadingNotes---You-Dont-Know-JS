@@ -1,6 +1,6 @@
 # 读书笔记 之《You Don't Know JS》- 对象和类
 
-## 对象和类 —— 强烈推荐[阅读原著](https://github.com/getify/You-Dont-Know-JS/blob/2nd-ed/objects-classes/README.md)
+### 即便面向过程简单直接，即便函数式编程被奉为圭臬，但若是没有面向对象，可能现在的编程世界，会少了很多有趣而伟大的存在。况且“万事万物皆对象”是JS这门语言一直以来的 Slogan —— 强烈推荐[阅读原著](https://github.com/getify/You-Dont-Know-JS/blob/2nd-ed/objects-classes/README.md)
 
 ### 简介
 这一卷其实可以分为两部分, 即分析 `this` 工作机制的部分和探究 **JS的原型继承** 部分。

@@ -28,6 +28,6 @@
 
 - [异步和性能](/async%20%26%20performance/README.md) (async & performance)
 
-- [ES6+](/es6%20%26%20beyond/README.md) (ES6 & Beyond) --- 进行中
+- [ES6+](/es6%20%26%20beyond/README.md) (ES6 & Beyond)
 
 **News**：目前该书正在在线编辑第二版，新增加了不少内容，待完成后也会同步至读书笔记中，敬请期待

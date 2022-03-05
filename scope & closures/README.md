@@ -1,6 +1,6 @@
 # 读书笔记 之《You Don't Know JS》- 作用域和闭包
 
-## 作用域和闭包一直是JS中很基础也是十分重要的一部分，深入理解作用域工作的原理，以及由此而产生的闭包的概念，是我们写好代码的保证 —— 强烈推荐[阅读原著](https://github.com/getify/You-Dont-Know-JS/blob/1st-ed/scope%20&%20closures/README.md#you-dont-know-js-scope--closures "You Don't Know JS")
+### 作用域和闭包一直是JS中很基础也是十分重要的一部分，深入理解作用域工作的原理，以及由此而产生的闭包的概念，是我们写好代码的保证 —— 强烈推荐[阅读原著](https://github.com/getify/You-Dont-Know-JS/blob/1st-ed/scope%20&%20closures/README.md#you-dont-know-js-scope--closures "You Don't Know JS")
 
 ### 简介
 这一卷除了探索JS作用域的原理之外，还涉及到对词法作用域的梳理，以及函数作用域和块级作用域的对比。
